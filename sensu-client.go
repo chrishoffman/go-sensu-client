@@ -1,17 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"flag"
 	"github.com/bitly/go-simplejson"
 	"github.com/streadway/amqp"
 	"io/ioutil"
+	"net/url"
 	"log"
 	"strconv"
 	"time"
 )
 
 var configFile, configDir string
-
 
 type SensuClient struct {
 	ConfigFile string
@@ -25,7 +26,6 @@ type rabbitmq struct {
 	uri          string
 	conn         *amqp.Connection
 	channel      *amqp.Channel
-	connected    chan bool
 	disconnected chan *amqp.Error
 }
 
@@ -42,17 +42,18 @@ func (c *SensuClient) Start(err chan error) {
 
 	c.r = &rabbitmq{
 		uri:          "amqp://guest:guest@localhost:5672/",
-		connected:    make(chan bool),
 		disconnected: make(chan *amqp.Error),
 	}
 
-	go c.r.Connect()
+	connected := make(chan bool)
+	go c.Connect(connected)
 
 	for {
 		select {
-		case <-c.r.connected:
+		case <-connected:
 			c.Keepalive(5 * time.Second)
-			// TODO: Implement disconnect channel
+		case <-c.r.disconnected:
+			c.Reset()
 		}
 	}
 }
@@ -82,7 +83,21 @@ func (c *SensuClient) Shutdown() chan error {
 	return nil
 }
 
-func (r *rabbitmq) Connect() {
+func (c *SensuClient) Connect(connected chan bool) error {
+	if rabbitmqSettings, ok := c.settings.CheckGet("rabbitmq"); ok {
+		log.Println(rabbitmqSettings)
+	} else {
+		return fmt.Errorf("RabbitMQ settings missing from config")
+	}
+	
+
+
+	log.Println("RabbitMQ connected and channel established")
+	connected <- true
+	return nil
+}
+
+func (r *rabbitmq) connect(host string, port int, vhost string, userInfo *url.Userinfo) {
 	var err error
 
 	retryTicker := time.NewTicker(10 * time.Second)
@@ -113,8 +128,6 @@ func (r *rabbitmq) Connect() {
 	// Notify disconnect channel when disconnected
 	r.channel.NotifyClose(r.disconnected)
 
-	log.Println("RabbitMQ connected and channel established")
-	r.connected <- true
 }
 
 func (c *SensuClient) Keepalive(interval time.Duration) {
@@ -141,8 +154,8 @@ func (k *keepalive) loop(r *rabbitmq) {
 		log.Println("Exchange Declare: %s", err)
 	}
 
-	reset := make(chan bool)
 	k.publish(r)
+	reset := make(chan bool)
 	k.timer = time.AfterFunc(k.interval, func() {
 		k.publish(r)
 		reset <- true
