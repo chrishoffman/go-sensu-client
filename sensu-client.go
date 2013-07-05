@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
+	_ "fmt"
 	"log"
 	"time"
-	_ "strconv"
+	"strconv"
 	"github.com/streadway/amqp"
 )
 
@@ -31,7 +31,7 @@ type keepalive struct {
 
 func (c *SensuClient) Start() chan error {
 
-    go c.r.connect()
+    go c.r.Connect()
 
     for {
         select {
@@ -41,7 +41,7 @@ func (c *SensuClient) Start() chan error {
 	}
 }
 
-func (r *rabbitmq) connect() {
+func (r *rabbitmq) Connect() {
     var err error
 
     retryTicker := time.NewTicker(10 * time.Second)
@@ -88,9 +88,22 @@ func (c *SensuClient) keepalive(interval time.Duration) {
 }
 
 func (k *keepalive) loop(r *rabbitmq) {
+    if err := r.channel.ExchangeDeclare(
+        "keepalives",     
+        "direct",
+        true,
+        false,
+        false,
+        false,
+        nil,
+    ); err != nil {
+        log.Println("Exchange Declare: %s", err)
+    }
+
 	reset := make(chan bool)
+	k.publish(r)
 	k.timer = time.AfterFunc(k.interval, func() {
-		fmt.Println(time.Now())
+		k.publish(r)
 		reset <- true
 	})
 
@@ -109,26 +122,26 @@ func (k *keepalive) loop(r *rabbitmq) {
 	}
 }
 
-// func (k *keepalive) publish(t time.Time) {
-//     unixTimestamp := int64(t.Unix())
-//     msg := amqp.Publishing{
-//         ContentType:  "application/json",
-//         Body:         []byte(strconv.FormatInt(unixTimestamp, 10)),
-//         DeliveryMode: amqp.Persistent,
-//     }
+func (k *keepalive) publish(r *rabbitmq) {
+    unixTimestamp := int64(time.Now().Unix())
+    msg := amqp.Publishing{
+        ContentType:  "application/json",
+        Body:         []byte(strconv.FormatInt(unixTimestamp, 10)),
+        DeliveryMode: amqp.Persistent,
+    }
 
-//     if err := c.channel.Publish(
-//         "keepalives",
-//         "",
-//         false,
-//         false,
-//         msg,
-//     ); err != nil {
-//         log.Printf("keepalive.publish: %v", err)
-//         return
-//     }
-//     log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
-// }
+    if err := r.channel.Publish(
+        "keepalives",
+        "",
+        false,
+        false,
+        msg,
+    ); err != nil {
+        log.Printf("keepalive.publish: %v", err)
+        return
+    }
+    log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
+}
 
 func main() {
 	r := &rabbitmq {
@@ -143,7 +156,8 @@ func main() {
 
 	go c.Start()
 
-	time.Sleep(20 * time.Second)
-	panic("")
+	select {}
+	//time.Sleep(20 * time.Second)
+	//panic("")
 
 }
