@@ -1,23 +1,31 @@
 package main
 
 import (
-	_ "fmt"
-	"log"
-	"time"
-	"strconv"
+	"flag"
+	"github.com/bitly/go-simplejson"
 	"github.com/streadway/amqp"
+	"io/ioutil"
+	"log"
+	"strconv"
+	"time"
 )
 
+var configFile, configDir string
+
+
 type SensuClient struct {
-	r *rabbitmq
-	k *keepalive
+	ConfigFile string
+	ConfigDir  string
+	settings   *simplejson.Json
+	r          *rabbitmq
+	k          *keepalive
 }
 
 type rabbitmq struct {
-	uri     string
-	conn    *amqp.Connection
-	channel *amqp.Channel
-	connected chan bool
+	uri          string
+	conn         *amqp.Connection
+	channel      *amqp.Channel
+	connected    chan bool
 	disconnected chan *amqp.Error
 }
 
@@ -29,54 +37,87 @@ type keepalive struct {
 	close    chan bool
 }
 
-func (c *SensuClient) Start() chan error {
+func (c *SensuClient) Start(err chan error) {
+	c.configure()
 
-    go c.r.Connect()
+	c.r = &rabbitmq{
+		uri:          "amqp://guest:guest@localhost:5672/",
+		connected:    make(chan bool),
+		disconnected: make(chan *amqp.Error),
+	}
 
-    for {
-        select {
-            case <- c.r.connected:
-            	c.keepalive(5 * time.Second)
+	go c.r.Connect()
+
+	for {
+		select {
+		case <-c.r.connected:
+			c.Keepalive(5 * time.Second)
+			// TODO: Implement disconnect channel
 		}
 	}
 }
 
-func (r *rabbitmq) Connect() {
-    var err error
+func (c *SensuClient) configure() error {
+	file, err := ioutil.ReadFile(c.ConfigFile)
+	if err != nil {
+	    log.Println("File error: %v", err)
+	}
 
-    retryTicker := time.NewTicker(10 * time.Second)
-    defer retryTicker.Stop()
+	json, err := simplejson.NewJson(file)
+	if err != nil {
+	    log.Println("json error: %v\n", err)
+	}
 
-    done := make(chan bool)
-    go func() {
-        for _ = range retryTicker.C {
-            log.Printf("dialing %q", r.uri)
-            r.conn, err = amqp.Dial(r.uri)
-            if err != nil {
-                log.Println("Dial: %s", err)
-                continue
-            }
-
-            log.Printf("got Connection, getting Channel")
-            r.channel, err = r.conn.Channel()
-            if err != nil {
-                log.Println("Channel: %s", err)
-                continue
-            }
-
-            done <- true
-        }
-    }()
-    <-done
-
-    // Notify disconnect channel when disconnected
-    r.channel.NotifyClose(r.disconnected)
-
-    log.Println("RabbitMQ connected and channel established")
-    r.connected <- true
+	c.settings = json
+	return nil
 }
 
-func (c *SensuClient) keepalive(interval time.Duration) {
+func (c *SensuClient) Reset() chan error {
+
+	return nil
+}
+
+func (c *SensuClient) Shutdown() chan error {
+
+	return nil
+}
+
+func (r *rabbitmq) Connect() {
+	var err error
+
+	retryTicker := time.NewTicker(10 * time.Second)
+	defer retryTicker.Stop()
+
+	done := make(chan bool)
+	go func() {
+		for _ = range retryTicker.C {
+			log.Printf("dialing %q", r.uri)
+			r.conn, err = amqp.Dial(r.uri)
+			if err != nil {
+				log.Println("Dial: %s", err)
+				continue
+			}
+
+			log.Printf("got Connection, getting Channel")
+			r.channel, err = r.conn.Channel()
+			if err != nil {
+				log.Println("Channel: %s", err)
+				continue
+			}
+
+			done <- true
+		}
+	}()
+	<-done
+
+	// Notify disconnect channel when disconnected
+	r.channel.NotifyClose(r.disconnected)
+
+	log.Println("RabbitMQ connected and channel established")
+	r.connected <- true
+}
+
+func (c *SensuClient) Keepalive(interval time.Duration) {
 	c.k = &keepalive{
 		interval: interval,
 		restart:  make(chan bool),
@@ -88,17 +129,17 @@ func (c *SensuClient) keepalive(interval time.Duration) {
 }
 
 func (k *keepalive) loop(r *rabbitmq) {
-    if err := r.channel.ExchangeDeclare(
-        "keepalives",     
-        "direct",
-        true,
-        false,
-        false,
-        false,
-        nil,
-    ); err != nil {
-        log.Println("Exchange Declare: %s", err)
-    }
+	if err := r.channel.ExchangeDeclare(
+		"keepalives",
+		"direct",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	); err != nil {
+		log.Println("Exchange Declare: %s", err)
+	}
 
 	reset := make(chan bool)
 	k.publish(r)
@@ -123,40 +164,48 @@ func (k *keepalive) loop(r *rabbitmq) {
 }
 
 func (k *keepalive) publish(r *rabbitmq) {
-    unixTimestamp := int64(time.Now().Unix())
-    msg := amqp.Publishing{
-        ContentType:  "application/json",
-        Body:         []byte(strconv.FormatInt(unixTimestamp, 10)),
-        DeliveryMode: amqp.Persistent,
-    }
+	unixTimestamp := int64(time.Now().Unix())
+	msg := amqp.Publishing{
+		ContentType:  "application/json",
+		Body:         []byte(strconv.FormatInt(unixTimestamp, 10)),
+		DeliveryMode: amqp.Persistent,
+	}
 
-    if err := r.channel.Publish(
-        "keepalives",
-        "",
-        false,
-        false,
-        msg,
-    ); err != nil {
-        log.Printf("keepalive.publish: %v", err)
-        return
-    }
-    log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
+	if err := r.channel.Publish(
+		"keepalives",
+		"",
+		false,
+		false,
+		msg,
+	); err != nil {
+		log.Printf("keepalive.publish: %v", err)
+		return
+	}
+	log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
+}
+
+func init() {
+	flag.StringVar(&configFile, "config-file", "config.json", "Default config file location")
+	flag.StringVar(&configDir, "config-dir", "conf.d", "Default config directory to load config files")
+	flag.Parse()
 }
 
 func main() {
-	r := &rabbitmq {
-		uri: "amqp://guest:guest@localhost:5672/",
-		connected:  make(chan bool),
-		disconnected:     make(chan *amqp.Error),		
+
+	c := &SensuClient{
+		ConfigFile: configFile,
+		ConfigDir:  configDir,
 	}
 
-	c := &SensuClient {
-		r: r,
+	e := make(chan error)
+	go c.Start(e)
+
+	for {
+		select {
+		case err := <-e:
+			panic(err)
+		}
 	}
-
-	go c.Start()
-
-	select {}
 	//time.Sleep(20 * time.Second)
 	//panic("")
 
