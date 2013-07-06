@@ -10,6 +10,7 @@ import (
 	"log"
 	"strconv"
 	"time"
+	"strings"
 )
 
 var configFile, configDir string
@@ -45,6 +46,7 @@ func (c *SensuClient) Start(errc chan error) {
 
 	connected := make(chan bool)
 	e := make(chan error)
+	c.r = new(rabbitmq)
 	go c.r.Connect(c.config, connected, e)
 
 	for {
@@ -90,14 +92,22 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 	}
 
 	host := s.Get("host").MustString("localhost")
-	port := s.Get("port").MustInt(5672)
+	port := int64(s.Get("port").MustInt(5672))
 	user := s.Get("user").MustString("guest")
 	password := s.Get("password").MustString("guest")
 	vhost := s.Get("vhost").MustString("/sensu")
 
 	userInfo := url.UserPassword(user, password)
 
-	err := r.connect(host, port, vhost, userInfo)
+	u := url.URL {
+		Scheme: "amqp",
+		Host: strings.Join([]string{host, ":", strconv.FormatInt(port, 10)}, ""),
+		Path: vhost,
+		User: userInfo,
+	}
+	uri := u.String()
+	log.Println(uri)
+	err := r.connect(uri)
 	if err != nil {
 		errc <- fmt.Errorf("Unable to connect to RabbitMQ")
 		return
@@ -107,7 +117,7 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 	connected <- true
 }
 
-func (r *rabbitmq) connect(host string, port int, vhost string, userInfo *url.Userinfo) error {
+func (r *rabbitmq) connect(uri string) error {
 	var err error
 
 	retryTicker := time.NewTicker(10 * time.Second)
@@ -116,8 +126,8 @@ func (r *rabbitmq) connect(host string, port int, vhost string, userInfo *url.Us
 	done := make(chan bool)
 	go func() {
 		for _ = range retryTicker.C {
-			log.Printf("dialing %q", r.uri)
-			r.conn, err = amqp.Dial(r.uri)
+			log.Printf("dialing %q", uri)
+			r.conn, err = amqp.Dial(uri)
 			if err != nil {
 				log.Println("Dial: %s", err)
 				continue
