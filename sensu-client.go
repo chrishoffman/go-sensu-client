@@ -48,12 +48,17 @@ func (c *SensuClient) Start(errc chan error) {
 	c.r = new(rabbitmq)
 	go c.r.Connect(c.config, connected, e)
 
+	disconnected := make(chan *amqp.Error)
 	for {
 		select {
 		case <-connected:
 			c.Keepalive(5 * time.Second)
-		case <-c.r.disconnected:
+			disconnected = c.r.disconnected // Enable disconnect channel
+		case errd := <-disconnected:
+			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()
+			disconnected = nil // Disable disconnect channel
+			go c.r.Connect(c.config, connected, e)
 		}
 	}
 }
@@ -61,12 +66,12 @@ func (c *SensuClient) Start(errc chan error) {
 func (c *SensuClient) configure() error {
 	file, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
-	    log.Println("File error: %v", err)
+	    log.Printf("File error: %v", err)
 	}
 
 	json, err := simplejson.NewJson(file)
 	if err != nil {
-	    log.Println("json error: %v\n", err)
+	    log.Printf("json error: %v\n", err)
 	}
 
 	c.config = json
@@ -74,6 +79,8 @@ func (c *SensuClient) configure() error {
 }
 
 func (c *SensuClient) Reset() chan error {
+	// Stop keepalive timer
+	c.k.stop <- true
 
 	return nil
 }
@@ -143,6 +150,7 @@ func (r *rabbitmq) connect(uri string) error {
 	<-done
 
 	// Notify disconnect channel when disconnected
+	r.disconnected = make(chan *amqp.Error)
 	r.channel.NotifyClose(r.disconnected)
 
 	return nil
