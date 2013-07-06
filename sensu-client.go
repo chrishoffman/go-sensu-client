@@ -47,7 +47,7 @@ func (c *SensuClient) Start(errc chan error) {
 	e := make(chan error)
 	go c.r.Connect(c.config, connected, e)
 
-	disconnected := make(chan *amqp.Error)
+	var disconnected chan *amqp.Error
 	for {
 		select {
 		case <-connected:
