@@ -41,6 +41,7 @@ func (c *SensuClient) Start(errc chan error) {
 	err := c.configure()
 	if err != nil {
 		errc <- fmt.Errorf("Unable to configure client")
+		return
 	}
 
 	connected := make(chan bool)
@@ -249,7 +250,4 @@ func main() {
 			panic(err)
 		}
 	}
-	//time.Sleep(20 * time.Second)
-	//panic("")
-
 }
