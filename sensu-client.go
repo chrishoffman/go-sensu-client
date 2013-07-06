@@ -58,6 +58,7 @@ func (c *SensuClient) Start(errc chan error) {
 			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()
 			disconnected = nil // Disable disconnect channel
+			time.Sleep(rabbitmqRetryInterval)
 			go c.r.Connect(c.config, connected, errc)
 		}
 	}
@@ -115,9 +116,9 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 	}
 	uri := u.String()
 
+	reset := make(chan bool)
 	done := make(chan bool)
 	go r.connect(uri, done)
-	reset := make(chan bool)
 	timer := time.AfterFunc(rabbitmqRetryInterval, func() {
 		r.connect(uri, done)
 		reset <- true
@@ -126,7 +127,6 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 	for {
 		select {
 		case <-done:
-			timer.Stop()
 			log.Println("RabbitMQ connected and channel established")
 			connected <- true
 			return
