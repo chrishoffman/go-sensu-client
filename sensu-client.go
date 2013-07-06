@@ -91,11 +91,11 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 		return
 	}
 
-	host := s.Get("host").MustString("localhost")
-	port := int64(s.Get("port").MustInt(5672))
-	user := s.Get("user").MustString("guest")
-	password := s.Get("password").MustString("guest")
-	vhost := s.Get("vhost").MustString("/sensu")
+	host := s.Get("host").MustString()
+	port := int64(s.Get("port").MustInt())
+	user := s.Get("user").MustString()
+	password := s.Get("password").MustString()
+	vhost := s.Get("vhost").MustString()
 
 	userInfo := url.UserPassword(user, password)
 
@@ -105,7 +105,6 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 		Path: vhost,
 		User: userInfo,
 	}
-
 	err := r.connect(u.String())
 	if err != nil {
 		errc <- fmt.Errorf("Unable to connect to RabbitMQ")
