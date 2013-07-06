@@ -45,7 +45,6 @@ func (c *SensuClient) Start(errc chan error) {
 
 	connected := make(chan bool)
 	e := make(chan error)
-	c.r = new(rabbitmq)
 	go c.r.Connect(c.config, connected, e)
 
 	disconnected := make(chan *amqp.Error)
@@ -224,7 +223,11 @@ func (k *keepalive) publish(r *rabbitmq) {
 }
 
 func NewClient(file string, dir string) *SensuClient {
-	return &SensuClient{ConfigFile: configFile, ConfigDir: configDir}
+	return &SensuClient{
+		ConfigFile: configFile,
+		ConfigDir: configDir,
+		r: new(rabbitmq),
+	}
 }
 
 func init() {
