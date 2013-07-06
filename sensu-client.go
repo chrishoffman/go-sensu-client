@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/streadway/amqp"
 	"io/ioutil"
-	"net/url"
 	"log"
+	"net/url"
 	"strconv"
 	"time"
 )
@@ -65,12 +65,12 @@ func (c *SensuClient) Start(errc chan error) {
 func (c *SensuClient) configure() error {
 	file, err := ioutil.ReadFile(c.ConfigFile)
 	if err != nil {
-	    log.Printf("File error: %v", err)
+		log.Printf("File error: %v", err)
 	}
 
 	json, err := simplejson.NewJson(file)
 	if err != nil {
-	    log.Printf("json error: %v\n", err)
+		log.Printf("json error: %v\n", err)
 	}
 
 	c.config = json
@@ -90,7 +90,7 @@ func (c *SensuClient) Shutdown() chan error {
 }
 
 func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan error) {
-	s, ok := cfg.CheckGet("rabbitmq"); 
+	s, ok := cfg.CheckGet("rabbitmq")
 	if !ok {
 		errc <- fmt.Errorf("RabbitMQ settings missing from config")
 		return
@@ -104,11 +104,11 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 
 	userInfo := url.UserPassword(user, password)
 
-	u := url.URL {
+	u := url.URL{
 		Scheme: "amqp",
-		Host: host + ":" + strconv.FormatInt(int64(port), 10),
-		Path: vhost,
-		User: userInfo,
+		Host:   host + ":" + strconv.FormatInt(int64(port), 10),
+		Path:   vhost,
+		User:   userInfo,
 	}
 	err := r.connect(u.String())
 	if err != nil {
@@ -225,8 +225,8 @@ func (k *keepalive) publish(r *rabbitmq) {
 func NewClient(file string, dir string) *SensuClient {
 	return &SensuClient{
 		ConfigFile: configFile,
-		ConfigDir: configDir,
-		r: new(rabbitmq),
+		ConfigDir:  configDir,
+		r:          new(rabbitmq),
 	}
 }
 
