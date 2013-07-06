@@ -10,7 +10,6 @@ import (
 	"log"
 	"strconv"
 	"time"
-	"strings"
 )
 
 var configFile, configDir string
@@ -101,7 +100,7 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 
 	u := url.URL {
 		Scheme: "amqp",
-		Host: strings.Join([]string{host, ":", strconv.FormatInt(port, 10)}, ""),
+		Host: host + ":" + strconv.FormatInt(port, 10),
 		Path: vhost,
 		User: userInfo,
 	}
