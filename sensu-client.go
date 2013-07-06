@@ -105,9 +105,8 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 		Path: vhost,
 		User: userInfo,
 	}
-	uri := u.String()
-	log.Println(uri)
-	err := r.connect(uri)
+
+	err := r.connect(u.String())
 	if err != nil {
 		errc <- fmt.Errorf("Unable to connect to RabbitMQ")
 		return
