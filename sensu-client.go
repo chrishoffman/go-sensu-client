@@ -17,7 +17,7 @@ var configFile, configDir string
 type SensuClient struct {
 	ConfigFile string
 	ConfigDir  string
-	settings   *simplejson.Json
+	config     *simplejson.Json
 	r          *rabbitmq
 	k          *keepalive
 }
@@ -37,16 +37,15 @@ type keepalive struct {
 	close    chan bool
 }
 
-func (c *SensuClient) Start(err chan error) {
-	c.configure()
-
-	c.r = &rabbitmq{
-		uri:          "amqp://guest:guest@localhost:5672/",
-		disconnected: make(chan *amqp.Error),
+func (c *SensuClient) Start(errc chan error) {
+	err := c.configure()
+	if err != nil {
+		errc <- fmt.Errorf("Unable to configure client")
 	}
 
 	connected := make(chan bool)
-	go c.Connect(connected)
+	e := make(chan error)
+	go c.r.Connect(c.config, connected, e)
 
 	for {
 		select {
@@ -69,7 +68,7 @@ func (c *SensuClient) configure() error {
 	    log.Println("json error: %v\n", err)
 	}
 
-	c.settings = json
+	c.config = json
 	return nil
 }
 
@@ -83,21 +82,32 @@ func (c *SensuClient) Shutdown() chan error {
 	return nil
 }
 
-func (c *SensuClient) Connect(connected chan bool) error {
-	if rabbitmqSettings, ok := c.settings.CheckGet("rabbitmq"); ok {
-		log.Println(rabbitmqSettings)
-	} else {
-		return fmt.Errorf("RabbitMQ settings missing from config")
+func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan error) {
+	s, ok := cfg.CheckGet("rabbitmq"); 
+	if !ok {
+		errc <- fmt.Errorf("RabbitMQ settings missing from config")
+		return
 	}
-	
 
+	host := s.Get("host").MustString("localhost")
+	port := s.Get("port").MustInt(5672)
+	user := s.Get("user").MustString("guest")
+	password := s.Get("password").MustString("guest")
+	vhost := s.Get("vhost").MustString("/sensu")
+
+	userInfo := url.UserPassword(user, password)
+
+	err := r.connect(host, port, vhost, userInfo)
+	if err != nil {
+		errc <- fmt.Errorf("Unable to connect to RabbitMQ")
+		return
+	}
 
 	log.Println("RabbitMQ connected and channel established")
 	connected <- true
-	return nil
 }
 
-func (r *rabbitmq) connect(host string, port int, vhost string, userInfo *url.Userinfo) {
+func (r *rabbitmq) connect(host string, port int, vhost string, userInfo *url.Userinfo) error {
 	var err error
 
 	retryTicker := time.NewTicker(10 * time.Second)
@@ -128,6 +138,7 @@ func (r *rabbitmq) connect(host string, port int, vhost string, userInfo *url.Us
 	// Notify disconnect channel when disconnected
 	r.channel.NotifyClose(r.disconnected)
 
+	return nil
 }
 
 func (c *SensuClient) Keepalive(interval time.Duration) {
@@ -197,6 +208,10 @@ func (k *keepalive) publish(r *rabbitmq) {
 	log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
 }
 
+func NewClient(file string, dir string) *SensuClient {
+	return &SensuClient{ConfigFile: configFile, ConfigDir: configDir}
+}
+
 func init() {
 	flag.StringVar(&configFile, "config-file", "config.json", "Default config file location")
 	flag.StringVar(&configDir, "config-dir", "conf.d", "Default config directory to load config files")
@@ -205,10 +220,7 @@ func init() {
 
 func main() {
 
-	c := &SensuClient{
-		ConfigFile: configFile,
-		ConfigDir:  configDir,
-	}
+	c := NewClient(configFile, configDir)
 
 	e := make(chan error)
 	go c.Start(e)
