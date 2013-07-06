@@ -38,6 +38,8 @@ type keepalive struct {
 }
 
 func (c *SensuClient) Start(errc chan error) {
+	var disconnected chan *amqp.Error
+
 	err := c.configure()
 	if err != nil {
 		errc <- fmt.Errorf("Unable to configure client")
@@ -45,10 +47,8 @@ func (c *SensuClient) Start(errc chan error) {
 	}
 
 	connected := make(chan bool)
-	e := make(chan error)
-	go c.r.Connect(c.config, connected, e)
+	go c.r.Connect(c.config, connected, errc)
 
-	var disconnected chan *amqp.Error
 	for {
 		select {
 		case <-connected:
@@ -58,7 +58,7 @@ func (c *SensuClient) Start(errc chan error) {
 			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()
 			disconnected = nil // Disable disconnect channel
-			go c.r.Connect(c.config, connected, e)
+			go c.r.Connect(c.config, connected, errc)
 		}
 	}
 }
@@ -90,6 +90,8 @@ func (c *SensuClient) Shutdown() chan error {
 	return nil
 }
 
+const rabbitmqRetryInterval = 5 * time.Second
+
 func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan error) {
 	s, ok := cfg.CheckGet("rabbitmq")
 	if !ok {
@@ -111,49 +113,51 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 		Path:   vhost,
 		User:   userInfo,
 	}
-	err := r.connect(u.String())
+	uri := u.String()
+
+	done := make(chan bool)
+	go r.connect(uri, done)
+	reset := make(chan bool)
+	timer := time.AfterFunc(rabbitmqRetryInterval, func() {
+		r.connect(uri, done)
+		reset <- true
+	})
+	
+	for {
+		select {
+		case <-done:
+			timer.Stop()
+			log.Println("RabbitMQ connected and channel established")
+			connected <- true
+			return
+		case <-reset:
+			timer.Reset(rabbitmqRetryInterval)
+		}
+	}
+}
+
+func (r *rabbitmq) connect(uri string, done chan bool) {
+	var err error
+
+	log.Printf("dialing %q", uri)
+	r.conn, err = amqp.Dial(uri)
 	if err != nil {
-		errc <- fmt.Errorf("Unable to connect to RabbitMQ")
+		log.Printf("Dial: %s", err)
 		return
 	}
 
-	log.Println("RabbitMQ connected and channel established")
-	connected <- true
-}
+	log.Printf("Connection established, getting Channel")
+	r.channel, err = r.conn.Channel()
+	if err != nil {
+		log.Printf("Channel: %s", err)
+		return
+	}
 
-func (r *rabbitmq) connect(uri string) error {
-	var err error
+	// Notify disconnect channel when disconnected
+	r.disconnected = make(chan *amqp.Error)
+	r.channel.NotifyClose(r.disconnected)
 
-	retryTicker := time.NewTicker(10 * time.Second)
-	defer retryTicker.Stop()
-
-	done := make(chan bool)
-	go func() {
-		for _ = range retryTicker.C {
-			log.Printf("dialing %q", uri)
-			r.conn, err = amqp.Dial(uri)
-			if err != nil {
-				log.Println("Dial: %s", err)
-				continue
-			}
-
-			log.Printf("got Connection, getting Channel")
-			r.channel, err = r.conn.Channel()
-			if err != nil {
-				log.Println("Channel: %s", err)
-				continue
-			}
-
-			// Notify disconnect channel when disconnected
-			r.disconnected = make(chan *amqp.Error)
-			r.channel.NotifyClose(r.disconnected)
-
-			done <- true
-		}
-	}()
-	<-done
-
-	return nil
+	done <- true
 }
 
 func (c *SensuClient) Keepalive(interval time.Duration) {
