@@ -98,7 +98,7 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 	}
 
 	host := s.Get("host").MustString()
-	port := int64(s.Get("port").MustInt())
+	port := s.Get("port").MustInt()
 	user := s.Get("user").MustString()
 	password := s.Get("password").MustString()
 	vhost := s.Get("vhost").MustString()
@@ -107,7 +107,7 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 
 	u := url.URL {
 		Scheme: "amqp",
-		Host: host + ":" + strconv.FormatInt(port, 10),
+		Host: host + ":" + strconv.FormatInt(int64(port), 10),
 		Path: vhost,
 		User: userInfo,
 	}
@@ -144,14 +144,14 @@ func (r *rabbitmq) connect(uri string) error {
 				continue
 			}
 
+			// Notify disconnect channel when disconnected
+			r.disconnected = make(chan *amqp.Error)
+			r.channel.NotifyClose(r.disconnected)
+
 			done <- true
 		}
 	}()
 	<-done
-
-	// Notify disconnect channel when disconnected
-	r.disconnected = make(chan *amqp.Error)
-	r.channel.NotifyClose(r.disconnected)
 
 	return nil
 }
