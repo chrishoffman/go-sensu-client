@@ -19,7 +19,7 @@ type SensuClient struct {
 	ConfigDir  string
 	config     *simplejson.Json
 	r          *rabbitmq
-	k          *keepalive
+	k          *Keepalive
 }
 
 type rabbitmq struct {
@@ -27,14 +27,6 @@ type rabbitmq struct {
 	conn         *amqp.Connection
 	channel      *amqp.Channel
 	disconnected chan *amqp.Error
-}
-
-type keepalive struct {
-	interval time.Duration
-	timer    *time.Timer
-	restart  chan bool
-	stop     chan bool
-	close    chan bool
 }
 
 func (c *SensuClient) Start(errc chan error) {
@@ -81,7 +73,7 @@ func (c *SensuClient) configure() error {
 
 func (c *SensuClient) Reset() chan error {
 	// Stop keepalive timer
-	c.k.stop <- true
+	c.k.Stop()
 
 	return nil
 }
@@ -161,70 +153,8 @@ func (r *rabbitmq) connect(uri string, done chan bool) {
 }
 
 func (c *SensuClient) Keepalive(interval time.Duration) {
-	c.k = &keepalive{
-		interval: interval,
-		restart:  make(chan bool),
-		stop:     make(chan bool),
-		close:    make(chan bool),
-	}
-
+	c.k = NewKeepalive(interval)
 	go c.k.loop(c.r)
-}
-
-func (k *keepalive) loop(r *rabbitmq) {
-	if err := r.channel.ExchangeDeclare(
-		"keepalives",
-		"direct",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	); err != nil {
-		log.Println("Exchange Declare: %s", err)
-	}
-
-	k.publish(r)
-	reset := make(chan bool)
-	k.timer = time.AfterFunc(k.interval, func() {
-		k.publish(r)
-		reset <- true
-	})
-
-	for {
-		select {
-		case <-reset:
-			k.timer.Reset(k.interval)
-		case <-k.restart:
-			k.timer.Reset(k.interval)
-		case <-k.stop:
-			k.timer.Stop()
-		case <-k.close:
-			k.timer.Stop()
-			return
-		}
-	}
-}
-
-func (k *keepalive) publish(r *rabbitmq) {
-	unixTimestamp := int64(time.Now().Unix())
-	msg := amqp.Publishing{
-		ContentType:  "application/json",
-		Body:         []byte(strconv.FormatInt(unixTimestamp, 10)),
-		DeliveryMode: amqp.Persistent,
-	}
-
-	if err := r.channel.Publish(
-		"keepalives",
-		"",
-		false,
-		false,
-		msg,
-	); err != nil {
-		log.Printf("keepalive.publish: %v", err)
-		return
-	}
-	log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
 }
 
 func NewClient(file string, dir string) *SensuClient {
