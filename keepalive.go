@@ -44,6 +44,7 @@ func (k *Keepalive) Start() {
         k.publish(time.Now())
         reset <- true
     })
+    defer timer.Stop()
 
     for {
         select {
@@ -54,7 +55,6 @@ func (k *Keepalive) Start() {
         case <-k.stop:
             timer.Stop()
         case <-k.close:
-            timer.Stop()
             return
         }
     }
@@ -72,7 +72,7 @@ func (k *Keepalive) Close() {
     k.close <- true
 }
 
-func (k *Keepalive) publish(timestamp *time.Time) {
+func (k *Keepalive) publish(timestamp time.Time) {
     unixTimestamp := int64(timestamp.Unix())
     msg := amqp.Publishing{
         ContentType:  "application/json",

@@ -153,8 +153,8 @@ func (r *rabbitmq) connect(uri string, done chan bool) {
 }
 
 func (c *SensuClient) Keepalive(interval time.Duration) {
-	c.k = NewKeepalive(interval)
-	go c.k.loop(c.r)
+	c.k = NewKeepalive(c.r, interval)
+	go c.k.Start()
 }
 
 func NewClient(file string, dir string) *SensuClient {
