@@ -115,6 +115,7 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
 		r.connect(uri, done)
 		reset <- true
 	})
+	defer timer.Stop()
 	
 	for {
 		select {

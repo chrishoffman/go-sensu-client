@@ -15,7 +15,7 @@ type Keepalive struct {
     close    chan bool
 }
 
-func NewKeepalive(r *rabbitmq, interval time.Duration) {
+func NewKeepalive(r *rabbitmq, interval time.Duration) *Keepalive {
     return &Keepalive{
         r:        r,
         interval: interval,
