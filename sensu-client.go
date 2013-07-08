@@ -97,13 +97,13 @@ func main() {
 
 	c := NewClient(configFile, configDir)
 
-	e := make(chan error)
-	go c.Start(e)
+	errc := make(chan error)
+	go c.Start(errc)
 
 	for {
 		select {
-		case err := <-e:
-			panic(err)
+		case e := <-errc:
+			panic(e)
 		}
 	}
 }
