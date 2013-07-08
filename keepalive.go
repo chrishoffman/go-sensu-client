@@ -10,7 +10,7 @@ import (
 type Keepalive struct {
     r        *Rabbitmq
     interval time.Duration
-    restart  chan bool
+    reset  chan bool
     stop     chan bool
     close    chan bool
 }
@@ -19,7 +19,7 @@ func NewKeepalive(r *Rabbitmq, interval time.Duration) *Keepalive {
     return &Keepalive{
         r:        r,
         interval: interval,
-        restart:  make(chan bool),
+        reset:  make(chan bool),
         stop:     make(chan bool),
         close:    make(chan bool),      
     }
@@ -39,18 +39,15 @@ func (k *Keepalive) Start() {
     }
 
     k.publish(time.Now())
-    reset := make(chan bool)
     timer := time.AfterFunc(k.interval, func() {
         k.publish(time.Now())
-        reset <- true
+        k.reset <- true
     })
     defer timer.Stop()
 
     for {
         select {
-        case <-reset:
-            timer.Reset(k.interval)
-        case <-k.restart:
+        case <-k.reset:
             timer.Reset(k.interval)
         case <-k.stop:
             timer.Stop()
@@ -65,7 +62,7 @@ func (k *Keepalive) Stop() {
 }
 
 func (k *Keepalive) Restart() {
-    k.restart <- true
+    k.reset <- true
 }
 
 func (k *Keepalive) Close() {
