@@ -8,14 +8,14 @@ import (
 )
 
 type Keepalive struct {
-    r        *rabbitmq
+    r        *Rabbitmq
     interval time.Duration
     restart  chan bool
     stop     chan bool
     close    chan bool
 }
 
-func NewKeepalive(r *rabbitmq, interval time.Duration) *Keepalive {
+func NewKeepalive(r *Rabbitmq, interval time.Duration) *Keepalive {
     return &Keepalive{
         r:        r,
         interval: interval,

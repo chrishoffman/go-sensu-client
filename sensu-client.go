@@ -16,7 +16,7 @@ type SensuClient struct {
 	ConfigFile string
 	ConfigDir  string
 	config     *simplejson.Json
-	r          *rabbitmq
+	r          *Rabbitmq
 	k          *Keepalive
 }
 
@@ -83,7 +83,7 @@ func NewClient(file string, dir string) *SensuClient {
 	return &SensuClient{
 		ConfigFile: configFile,
 		ConfigDir:  configDir,
-		r:          new(rabbitmq),
+		r:          new(Rabbitmq),
 	}
 }
 

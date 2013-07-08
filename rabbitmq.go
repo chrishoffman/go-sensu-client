@@ -10,7 +10,7 @@ import (
     "time"
 )
 
-type rabbitmq struct {
+type Rabbitmq struct {
     uri          string
     conn         *amqp.Connection
     channel      *amqp.Channel
@@ -19,7 +19,7 @@ type rabbitmq struct {
 
 const rabbitmqRetryInterval = 5 * time.Second
 
-func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan error) {
+func (r *Rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan error) {
     s, ok := cfg.CheckGet("rabbitmq")
     if !ok {
         errc <- fmt.Errorf("RabbitMQ settings missing from config")
@@ -63,7 +63,7 @@ func (r *rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan 
     }
 }
 
-func (r *rabbitmq) connect(uri string, done chan bool) {
+func (r *Rabbitmq) connect(uri string, done chan bool) {
     var err error
 
     log.Printf("dialing %q", uri)
