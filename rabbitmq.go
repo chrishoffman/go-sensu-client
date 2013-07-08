@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	"crypto/tls"
 )
 
 type MessageQueuer interface {
