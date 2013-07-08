@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"github.com/bitly/go-simplejson"
 	"github.com/streadway/amqp"
 	"log"
 	"net/url"
@@ -12,8 +10,7 @@ import (
 )
 
 type MessageQueuer interface {
-	// TODO: Fixing signature for config, needs to be just rmq settings
-	Connect(*simplejson.Json, chan bool, chan error)
+	Connect(RabbitmqConfig, chan bool, chan error)
 	ExchangeDeclare(string, string, bool, bool, bool, bool, amqp.Table) error
 }
 
@@ -25,36 +22,23 @@ type Rabbitmq struct {
 }
 
 type RabbitmqConfig struct {
-	host     string
-	port     int64
-	vhost    string
-	user     string
-	password string
-	ssl      *tls.Config
+	Host     string
+	Port     int
+	Vhost    string
+	User     string
+	Password string
+	Ssl      *tls.Config
 }
 
 const rabbitmqRetryInterval = 5 * time.Second
 
-func (r *Rabbitmq) Connect(cfg *simplejson.Json, connected chan bool, errc chan error) {
-	s, ok := cfg.CheckGet("rabbitmq")
-	if !ok {
-		errc <- fmt.Errorf("RabbitMQ settings missing from config")
-		return
-	}
-
-	host := s.Get("host").MustString()
-	port := s.Get("port").MustInt()
-	user := s.Get("user").MustString()
-	password := s.Get("password").MustString()
-	vhost := s.Get("vhost").MustString()
-
-	userInfo := url.UserPassword(user, password)
+func (r *Rabbitmq) Connect(cfg RabbitmqConfig, connected chan bool, errc chan error) {
 
 	u := url.URL{
 		Scheme: "amqp",
-		Host:   host + ":" + strconv.FormatInt(int64(port), 10),
-		Path:   vhost,
-		User:   userInfo,
+		Host:   cfg.Host + ":" + strconv.FormatInt(int64(cfg.Port), 10),
+		Path:   cfg.Vhost,
+		User:   url.UserPassword(cfg.User, cfg.Password),
 	}
 	uri := u.String()
 

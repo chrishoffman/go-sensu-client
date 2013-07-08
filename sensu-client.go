@@ -29,8 +29,23 @@ func (c *SensuClient) Start(errc chan error) {
 		return
 	}
 
+	// Get RabbitMQ configs
+	s, ok := c.config.CheckGet("rabbitmq")
+	if !ok {
+		errc <- fmt.Errorf("RabbitMQ settings missing from config")
+		return
+	}
+
+	rmqConfig := RabbitmqConfig{
+		Host: s.Get("host").MustString(),
+		Port: s.Get("port").MustInt(),
+		Vhost: s.Get("vhost").MustString(),
+		User: s.Get("user").MustString(),
+		Password: s.Get("password").MustString(),
+	}
+
 	connected := make(chan bool)
-	go c.r.Connect(c.config, connected, errc)
+	go c.r.Connect(rmqConfig, connected, errc)
 
 	for {
 		select {
@@ -42,7 +57,7 @@ func (c *SensuClient) Start(errc chan error) {
 			c.Reset()
 			disconnected = nil // Disable disconnect channel
 			time.Sleep(rabbitmqRetryInterval)
-			go c.r.Connect(c.config, connected, errc)
+			go c.r.Connect(rmqConfig, connected, errc)
 		}
 	}
 }
