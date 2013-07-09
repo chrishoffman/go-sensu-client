@@ -46,8 +46,7 @@ func (r *Rabbitmq) Connect(cfg RabbitmqConfig, connected chan bool, errc chan er
 
 	reset := make(chan bool)
 	done := make(chan bool)
-	go r.connect(uri, done)
-	timer := time.AfterFunc(rabbitmqRetryInterval, func() {
+	timer := time.AfterFunc(0, func() {
 		r.connect(uri, done)
 		reset <- true
 	})

@@ -33,8 +33,7 @@ func (k *Keepalive) Start() {
 		log.Println("Exchange Declare: %s", err)
 	}
 
-	k.publish(time.Now())
-	timer := time.AfterFunc(k.interval, func() {
+	timer := time.AfterFunc(0, func() {
 		k.publish(time.Now())
 		k.reset <- true
 	})
