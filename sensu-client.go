@@ -119,6 +119,8 @@ func main() {
 		select {
 		case e := <-errc:
 			panic(e)
+		default:
+			return
 		}
 	}
 }
