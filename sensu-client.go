@@ -56,7 +56,7 @@ func (c *SensuClient) Start(errc chan error) {
 			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()
 			disconnected = nil // Disable disconnect channel
-			time.Sleep(rabbitmqRetryInterval)
+			time.Sleep(10 * time.Second)
 			go c.r.Connect(rmqConfig, connected, errc)
 		}
 	}
