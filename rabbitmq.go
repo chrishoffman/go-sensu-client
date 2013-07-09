@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type MessageQueuer interface {
+type MessagePublisher interface {
 	Connect(RabbitmqConfig, chan bool, chan error)
 	Disconnected() chan *amqp.Error
 	ExchangeDeclare(string, string) error
