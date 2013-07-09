@@ -17,7 +17,6 @@ type Client struct {
 	k          *Keepalive
 }
 
-
 func NewClient(file string, dir string) *Client {
 	return &Client{
 		configFile: file,
