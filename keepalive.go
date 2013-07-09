@@ -8,14 +8,14 @@ import (
 )
 
 type Keepalive struct {
-	r        *Rabbitmq
+	r        MessageQueuer
 	interval time.Duration
 	reset    chan bool
 	stop     chan bool
 	close    chan bool
 }
 
-func NewKeepalive(r *Rabbitmq, interval time.Duration) *Keepalive {
+func NewKeepalive(r MessageQueuer, interval time.Duration) *Keepalive {
 	return &Keepalive{
 		r:        r,
 		interval: interval,
@@ -26,14 +26,9 @@ func NewKeepalive(r *Rabbitmq, interval time.Duration) *Keepalive {
 }
 
 func (k *Keepalive) Start() {
-	if err := k.r.channel.ExchangeDeclare(
+	if err := k.r.ExchangeDeclare(
 		"keepalives",
 		"direct",
-		true,
-		false,
-		false,
-		false,
-		nil,
 	); err != nil {
 		log.Println("Exchange Declare: %s", err)
 	}
@@ -77,11 +72,9 @@ func (k *Keepalive) publish(timestamp time.Time) {
 		DeliveryMode: amqp.Persistent,
 	}
 
-	if err := k.r.channel.Publish(
+	if err := k.r.Publish(
 		"keepalives",
 		"",
-		false,
-		false,
 		msg,
 	); err != nil {
 		log.Printf("keepalive.publish: %v", err)

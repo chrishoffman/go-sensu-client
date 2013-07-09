@@ -12,7 +12,8 @@ import (
 type MessageQueuer interface {
 	Connect(RabbitmqConfig, chan bool, chan error)
 	Disconnected() chan *amqp.Error
-	ExchangeDeclare(string, string, bool, bool, bool, bool, amqp.Table) error
+	ExchangeDeclare(string, string) error
+	Publish(string, string, amqp.Publishing) error
 }
 
 type Rabbitmq struct {
@@ -66,6 +67,28 @@ func (r *Rabbitmq) Connect(cfg RabbitmqConfig, connected chan bool, errc chan er
 
 func (r *Rabbitmq) Disconnected() chan *amqp.Error {
 	return r.disconnected
+}
+
+func (r *Rabbitmq) ExchangeDeclare(name, kind string) error {
+	return r.channel.ExchangeDeclare(
+		name,
+		kind,
+		false, // All exchanges are not declared durable
+		false,
+		false,
+		false,
+		nil,
+	)
+}
+
+func (r *Rabbitmq) Publish(exchange, key string, msg amqp.Publishing) error {
+	return r.channel.Publish(
+		exchange,
+		key,
+		false,
+		false,
+		msg,
+	)
 }
 
 func (r *Rabbitmq) connect(uri string, done chan bool) {
