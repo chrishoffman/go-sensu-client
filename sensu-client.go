@@ -13,8 +13,8 @@ import (
 var configFile, configDir string
 
 type SensuClient struct {
-	ConfigFile string
-	ConfigDir  string
+	configFile string
+	configDir  string
 	config     *simplejson.Json
 	r          *Rabbitmq
 	k          *Keepalive
@@ -63,7 +63,7 @@ func (c *SensuClient) Start(errc chan error) {
 }
 
 func (c *SensuClient) configure() error {
-	file, err := ioutil.ReadFile(c.ConfigFile)
+	file, err := ioutil.ReadFile(c.configFile)
 	if err != nil {
 		log.Printf("File error: %v", err)
 	}
@@ -96,8 +96,8 @@ func (c *SensuClient) Keepalive(interval time.Duration) {
 
 func NewClient(file string, dir string) *SensuClient {
 	return &SensuClient{
-		ConfigFile: configFile,
-		ConfigDir:  configDir,
+		configFile: file,
+		configDir:  dir,
 		r:          new(Rabbitmq),
 	}
 }
