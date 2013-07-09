@@ -1,4 +1,4 @@
-package main
+package sensu
 
 import (
 	"github.com/streadway/amqp"
