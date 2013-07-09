@@ -9,11 +9,19 @@ import (
 	"time"
 )
 
-type MessagePublisher interface {
-	Connect(RabbitmqConfig, chan bool, chan error)
+type MessageQueuer interface {
+	Connect(cfg RabbitmqConfig, connected chan bool, errc chan error)
 	Disconnected() chan *amqp.Error
-	ExchangeDeclare(string, string) error
-	Publish(string, string, amqp.Publishing) error
+	ExchangeDeclare(name string, kind string) error	
+}
+
+type MessagePublisher interface {
+	MessageQueuer
+	Publish(exchange string, key string, msg amqp.Publishing) error
+}
+
+type MessageConsumer interface {
+	MessageQueuer
 }
 
 type Rabbitmq struct {
