@@ -51,7 +51,7 @@ func (c *SensuClient) Start(errc chan error) {
 		select {
 		case <-connected:
 			c.Keepalive(5 * time.Second)
-			disconnected = c.r.disconnected // Enable disconnect channel
+			disconnected = c.r.Disconnected() // Enable disconnect channel
 		case errd := <-disconnected:
 			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()

@@ -11,6 +11,7 @@ import (
 
 type MessageQueuer interface {
 	Connect(RabbitmqConfig, chan bool, chan error)
+	Disconnected() chan *amqp.Error
 	ExchangeDeclare(string, string, bool, bool, bool, bool, amqp.Table) error
 }
 
@@ -61,6 +62,10 @@ func (r *Rabbitmq) Connect(cfg RabbitmqConfig, connected chan bool, errc chan er
 			timer.Reset(rabbitmqRetryInterval)
 		}
 	}
+}
+
+func (r *Rabbitmq) Disconnected() chan *amqp.Error {
+	return r.disconnected
 }
 
 func (r *Rabbitmq) connect(uri string, done chan bool) {
