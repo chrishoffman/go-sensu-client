@@ -37,10 +37,10 @@ func (c *SensuClient) Start(errc chan error) {
 	}
 
 	rmqConfig := RabbitmqConfig{
-		Host: s.Get("host").MustString(),
-		Port: s.Get("port").MustInt(),
-		Vhost: s.Get("vhost").MustString(),
-		User: s.Get("user").MustString(),
+		Host:     s.Get("host").MustString(),
+		Port:     s.Get("port").MustInt(),
+		Vhost:    s.Get("vhost").MustString(),
+		User:     s.Get("user").MustString(),
 		Password: s.Get("password").MustString(),
 	}
 
