@@ -4,6 +4,7 @@ import (
 	// "encoding/json"
 	"fmt"
 	"reflect"
+	// "log"
 )
 
 type RabbitmqConfigSSL struct {
@@ -32,26 +33,45 @@ type Config struct {
 
 // }
 
-func (base *Config) extend(ext *Config) error {
-	for key, baseVal := range base.data {
-		if extVal, ok := ext.data[key]; ok {
+func extend(base map[string]interface{}, ext map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	for key, baseVal := range base {
+		if extVal, ok := ext[key]; ok {
 			b := reflect.ValueOf(baseVal)
 			e := reflect.ValueOf(extVal)
 
 			// Keep value of base if types do not match
 			if b.Type() != e.Type() {
-				return fmt.Errorf("Conflicting types for key: %s (%s/%s)", key, b.Kind().String(), e.Kind().String())
+				return nil, fmt.Errorf("Conflicting types for key: %s (%s/%s)", key, b.Kind().String(), e.Kind().String())
 			}
 
 			switch b.Kind() {
 			case reflect.Slice:
-				continue
+				bSlice := (baseVal).([]interface{})
+				eSlice := (extVal).([]interface{})
+
+				for _, ele := range eSlice {
+					base[key] = appendUnique(bSlice, ele)
+				}
 			case reflect.Map:
-				continue
+				bMap := (baseVal).(map[string]interface{})
+				eMap := (extVal).(map[string]interface{})
+				if base[key], err = extend(bMap, eMap); err != nil {
+					return nil, err
+				}
 			default:
-				continue
+				base[key] = extVal
 			}
 		}
 	}
-	return nil
+	return base, nil
+}
+
+func appendUnique(slice []interface{}, i interface{}) []interface{} {
+    for _, ele := range slice {
+        if ele == i {
+            return slice
+        }
+    }
+    return append(slice, i)
 }
