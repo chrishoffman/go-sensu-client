@@ -33,23 +33,25 @@ type Config struct {
 // }
 
 func (base *Config) merge(ext *Config) error {
-	for key, _ := range base.d {
-		b := reflect.ValueOf(base.d[key])
-		e := reflect.ValueOf(ext.d[key])
+	for key, baseVal := range base.d {
+		if extVal, ok := ext.d[key]; ok {
+			b := reflect.ValueOf(baseVal)
+			e := reflect.ValueOf(extVal)
 
-		// Keep value of base if types do not match
-		if b.Type() != e.Type() {
-			return fmt.Errorf("Conflicting types for key: %s (%s/%s)", key, b.Kind().String(), e.Kind().String())
+			// Keep value of base if types do not match
+			if b.Type() != e.Type() {
+				return fmt.Errorf("Conflicting types for key: %s (%s/%s)", key, b.Kind().String(), e.Kind().String())
+			}
+
+			switch b.Kind() {
+			case reflect.Slice:
+				continue
+			case reflect.Map:
+				continue
+			default:
+				continue
+			}
 		}
-
-		switch b.Kind() {
-		case reflect.Slice:
-			continue
-		case reflect.Map:
-			continue
-		default:
-			continue
-		} 
 	}
 	return nil
 }
