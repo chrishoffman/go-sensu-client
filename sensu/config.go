@@ -21,7 +21,7 @@ type RabbitmqConfig struct {
 }
 
 type Config struct {
-	d map[string]interface{}
+	data map[string]interface{}
 }
 
 // func Configure(configFile string, configDir string) (*Config, error) {
@@ -32,9 +32,9 @@ type Config struct {
 
 // }
 
-func (base *Config) merge(ext *Config) error {
-	for key, baseVal := range base.d {
-		if extVal, ok := ext.d[key]; ok {
+func (base *Config) extend(ext *Config) error {
+	for key, baseVal := range base.data {
+		if extVal, ok := ext.data[key]; ok {
 			b := reflect.ValueOf(baseVal)
 			e := reflect.ValueOf(extVal)
 
