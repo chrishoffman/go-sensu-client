@@ -23,12 +23,13 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 				eSlice := (extVal).([]interface{})
 
 				for _, ele := range eSlice {
-					base[key] = sliceAppendUnique(bSlice, ele)
+					base[key] = sliceExtend(bSlice, ele)
 				}
 			case reflect.Map:
 				bMap := (baseVal).(map[string]interface{})
 				eMap := (extVal).(map[string]interface{})
-				if base[key], err = mapExtend(bMap, eMap); err != nil {
+				base[key], err = mapExtend(bMap, eMap)
+				if err != nil {
 					return nil, err
 				}
 			default:
@@ -39,7 +40,7 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 	return base, nil
 }
 
-func sliceAppendUnique(slice []interface{}, i interface{}) []interface{} {
+func sliceExtend(slice []interface{}, i interface{}) []interface{} {
 	for _, ele := range slice {
 		if ele == i {
 			return slice

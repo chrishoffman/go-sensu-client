@@ -18,3 +18,8 @@ func Test_Extend(t *testing.T) {
 	c1.Extend(c2)
 	t.Log(c1)
 }
+
+func Test_Parse(t *testing.T) {
+	data, _ := parse("C:\\Users\\choffman\\projects\\go\\src\\sensu-client\\config.json")
+	t.Log(data)
+}

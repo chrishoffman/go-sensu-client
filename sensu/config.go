@@ -1,8 +1,9 @@
 package sensu
 
 import (
-	// "encoding/json"
-	// "log"
+	"encoding/json"
+	"io/ioutil"
+	"fmt"
 )
 
 type RabbitmqConfigSSL struct {
@@ -33,6 +34,17 @@ func (c1 *Config) Extend(c2 *Config) error {
 	return err
 }
 
-// func parse(filename string) (*Config, error) {
+func parse(filename string) (*Config, error) {
+	file, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("File error: %v", err)
+	}
 
-// }
+	c := new(Config)
+	err = json.Unmarshal(file, &c.data)
+	if err != nil {
+		return nil, fmt.Errorf("json error: %v\n", err)
+	}
+
+	return c, nil
+}
