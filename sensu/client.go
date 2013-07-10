@@ -1,56 +1,29 @@
 package sensu
 
 import (
-	"fmt"
-	"github.com/bitly/go-simplejson"
 	"github.com/streadway/amqp"
-	"io/ioutil"
 	"log"
 	"time"
 )
 
 type Client struct {
-	configFile string
-	configDir  string
-	config     *simplejson.Json
+	config     *Config
 	r          MessageQueuer
 	k          *Keepalive
 }
 
-func NewClient(file string, dir string) *Client {
+func NewClient(s *Config) *Client {
 	return &Client{
-		configFile: file,
-		configDir:  dir,
-		r:          new(Rabbitmq),
+		r:      new(Rabbitmq), 
+		config: s,
 	}
 }
 
 func (c *Client) Start(errc chan error) {
 	var disconnected chan *amqp.Error
 
-	err := c.configure()
-	if err != nil {
-		errc <- fmt.Errorf("Unable to configure client")
-		return
-	}
-
-	// Get RabbitMQ configs
-	s, ok := c.config.CheckGet("rabbitmq")
-	if !ok {
-		errc <- fmt.Errorf("RabbitMQ settings missing from config")
-		return
-	}
-
-	rmqConfig := RabbitmqConfig{
-		Host:     s.Get("host").MustString(),
-		Port:     s.Get("port").MustInt(),
-		Vhost:    s.Get("vhost").MustString(),
-		User:     s.Get("user").MustString(),
-		Password: s.Get("password").MustString(),
-	}
-
 	connected := make(chan bool)
-	go c.r.Connect(rmqConfig, connected, errc)
+	go c.r.Connect(c.config.Rabbitmq, connected, errc)
 
 	for {
 		select {
@@ -62,24 +35,9 @@ func (c *Client) Start(errc chan error) {
 			c.Reset()
 			disconnected = nil // Disable disconnect channel
 			time.Sleep(10 * time.Second)
-			go c.r.Connect(rmqConfig, connected, errc)
+			go c.r.Connect(c.config.Rabbitmq, connected, errc)
 		}
 	}
-}
-
-func (c *Client) configure() error {
-	file, err := ioutil.ReadFile(c.configFile)
-	if err != nil {
-		log.Printf("File error: %v", err)
-	}
-
-	json, err := simplejson.NewJson(file)
-	if err != nil {
-		log.Printf("json error: %v\n", err)
-	}
-
-	c.config = json
-	return nil
 }
 
 func (c *Client) Reset() chan error {

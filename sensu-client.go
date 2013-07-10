@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
 	"sensu-client/sensu"
 )
 
@@ -14,7 +16,13 @@ func init() {
 }
 
 func main() {
-	c := sensu.NewClient(configFile, configDir)
+	settings, err := sensu.LoadSettings(configFile, configDir)
+	if err != nil {
+		log.Printf("Unable to load settings: %s", err)
+		os.Exit(1)
+	}
+
+	c := sensu.NewClient(settings)
 
 	errc := make(chan error)
 	c.Start(errc)
