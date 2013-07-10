@@ -12,6 +12,9 @@ func Test_Extend(t *testing.T) {
 	d1["abc"] = []interface{}{"a","b","c"}
 	d2["abc"] = []interface{}{"a","d"}
 
-	d1, _ = extend(d1, d2)
-	t.Log(d1)
+	c1 := &Config{d1}
+	c2 := &Config{d2}
+
+	c1.Extend(c2)
+	t.Log(c1)
 }
