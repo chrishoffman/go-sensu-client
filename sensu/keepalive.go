@@ -8,14 +8,14 @@ import (
 )
 
 type Keepalive struct {
-	r        Publisher
+	r        MessageQueuer
 	interval time.Duration
 	reset    chan bool
 	stop     chan bool
 	close    chan bool
 }
 
-func NewKeepalive(r Publisher, interval time.Duration) *Keepalive {
+func NewKeepalive(r MessageQueuer, interval time.Duration) *Keepalive {
 	return &Keepalive{
 		r:        r,
 		interval: interval,

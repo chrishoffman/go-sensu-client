@@ -13,7 +13,7 @@ type Client struct {
 	configFile string
 	configDir  string
 	config     *simplejson.Json
-	r          *Rabbitmq
+	r          MessageQueuer
 	k          *Keepalive
 }
 
