@@ -24,17 +24,16 @@ type Config struct {
 	d map[string]interface{}
 }
 
-func Configure(configFile string, configDir string) (*Config, error) {
+// func Configure(configFile string, configDir string) (*Config, error) {
 
-}
+// }
 
-func parse(filename string) (*Config, error) {
+// func parse(filename string) (*Config, error) {
 
-}
+// }
 
 func (base *Config) merge(ext *Config) error {
-
-	for key, value := range base.d {
+	for key, _ := range base.d {
 		b := reflect.ValueOf(base.d[key])
 		e := reflect.ValueOf(ext.d[key])
 
@@ -51,5 +50,6 @@ func (base *Config) merge(ext *Config) error {
 		default:
 			continue
 		} 
-	} 
+	}
+	return nil
 }

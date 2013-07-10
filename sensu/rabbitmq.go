@@ -1,7 +1,6 @@
 package sensu
 
 import (
-	"crypto/tls"
 	"github.com/streadway/amqp"
 	"log"
 	"net/url"
