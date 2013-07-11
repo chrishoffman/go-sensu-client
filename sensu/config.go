@@ -44,7 +44,7 @@ func LoadConfigs(configFile string, configDir string) (*Config, error) {
 
 	files, derr := ioutil.ReadDir(configDir)
 	if derr != nil {
-		//TODO: errors
+		log.Printf("Unable to open config directory: %s", derr)
 	}
 
 	for _, f := range files {
