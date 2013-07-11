@@ -67,11 +67,12 @@ func LoadConfigs(configFile string, configDir string) (*Config, error) {
 }
 
 func (c *Config) loadRabbitmqConfig(j *Json) error {
-	c.Rabbitmq.Host = (((j.data["rabbitmq"]).(map[string]interface{}))["host"]).(string)
-	c.Rabbitmq.Port = int((((j.data["rabbitmq"]).(map[string]interface{}))["port"]).(float64))
-	c.Rabbitmq.Vhost = (((j.data["rabbitmq"]).(map[string]interface{}))["vhost"]).(string)
-	c.Rabbitmq.User = (((j.data["rabbitmq"]).(map[string]interface{}))["user"]).(string)
-	c.Rabbitmq.Password = (((j.data["rabbitmq"]).(map[string]interface{}))["password"]).(string)
+	r := (j.data["rabbitmq"]).(map[string]interface{})
+	c.Rabbitmq.Host = (r["host"]).(string)
+	c.Rabbitmq.Port = int((r["port"]).(float64))
+	c.Rabbitmq.Vhost = (r["vhost"]).(string)
+	c.Rabbitmq.User = (r["user"]).(string)
+	c.Rabbitmq.Password = (r["password"]).(string)
 	// TODO: ssl
 
 	return nil
