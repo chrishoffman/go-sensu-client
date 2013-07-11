@@ -14,7 +14,6 @@ type subscription struct {
 	s string
 }
 
-
 func handle(deliveries <-chan amqp.Delivery, done chan error) {
 	for d := range deliveries {
 		log.Printf(
