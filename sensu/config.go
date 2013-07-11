@@ -88,10 +88,9 @@ func parseFile(filename string) (*Json, error) {
 	return j, nil
 }
 
-func (j1 *Json) Extend(j2 *Json) error {
-	var err error
+func (j1 *Json) Extend(j2 *Json) (err error) {
 	j1.data, err = mapExtend(j1.data, j2.data)
-	return err
+	return
 }
 
 func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[string]interface{}, error) {
@@ -103,7 +102,7 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 
 			// Keep value of base if types do not match
 			if b.Type() != e.Type() {
-				return nil, fmt.Errorf("Conflicting types for key: %s (%s/%s)", key, b.Kind().String(), e.Kind().String())
+				return nil, fmt.Errorf("Conflicting types for key: %s (%s/%s). Skipping.", key, b.Kind().String(), e.Kind().String())
 			}
 
 			switch b.Kind() {
@@ -112,8 +111,9 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 				eSlice := (extVal).([]interface{})
 
 				for _, ele := range eSlice {
-					base[key] = sliceExtend(bSlice, ele)
+					bSlice = sliceExtend(bSlice, ele)
 				}
+				base[key] = bSlice
 			case reflect.Map:
 				bMap := (baseVal).(map[string]interface{})
 				eMap := (extVal).(map[string]interface{})
@@ -122,8 +122,15 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 					return nil, err
 				}
 			default:
-				base[key] = extVal
+				// Do nothing, prefer base
 			}
+		}
+	}
+
+	// Add all keys from ext that do not exist in base
+	for key, extVal := range ext {
+		if _, ok := base[key]; !ok {
+			base[key] = extVal
 		}
 	}
 	return base, nil
@@ -132,6 +139,7 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 func sliceExtend(slice []interface{}, i interface{}) []interface{} {
 	for _, ele := range slice {
 		if ele == i {
+			log.Printf("Found %v", i)
 			return slice
 		}
 	}
