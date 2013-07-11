@@ -32,6 +32,10 @@ type Json struct {
 	data map[string]interface{}
 }
 
+func NewJson(data map[string]interface{}) *Json {
+	return &Json{data}
+}
+
 func LoadConfigs(configFile string, configDir string) (*Config, error) {
 	js, ferr := parseFile(configFile)
 	if ferr != nil {
@@ -55,9 +59,32 @@ func LoadConfigs(configFile string, configDir string) (*Config, error) {
 		}
 	}
 
+	//var err error
 	config := new(Config)
+	config.loadRabbitmqConfig(js)
 
 	return config, nil
+}
+
+func (c *Config) loadRabbitmqConfig(j *Json) error {
+	c.Rabbitmq.Host = (((j.data["rabbitmq"]).(map[string]interface{}))["host"]).(string)
+	c.Rabbitmq.Port = int((((j.data["rabbitmq"]).(map[string]interface{}))["port"]).(float64))
+	c.Rabbitmq.Vhost = (((j.data["rabbitmq"]).(map[string]interface{}))["vhost"]).(string)
+	c.Rabbitmq.User = (((j.data["rabbitmq"]).(map[string]interface{}))["user"]).(string)
+	c.Rabbitmq.Password = (((j.data["rabbitmq"]).(map[string]interface{}))["password"]).(string)
+	// TODO: ssl
+
+	return nil
+}
+
+func (c *Config) loadClientConfig(j *Json) error {
+	
+	return nil
+}
+
+func (c *Config) loadChecksConfig(j *Json) error {
+	
+	return nil
 }
 
 func parseFile(filename string) (*Json, error) {

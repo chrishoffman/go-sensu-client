@@ -22,20 +22,6 @@ type Rabbitmq struct {
 	disconnected chan *amqp.Error
 }
 
-type RabbitmqConfigSSL struct {
-	PrivateKeyFile string
-	CertChainFile  string
-}
-
-type RabbitmqConfig struct {
-	Host     string
-	Port     int
-	Vhost    string
-	User     string
-	Password string
-	Ssl      RabbitmqConfigSSL
-}
-
 const rabbitmqRetryInterval = 5 * time.Second
 
 func (r *Rabbitmq) Connect(cfg RabbitmqConfig, connected chan bool, errc chan error) {

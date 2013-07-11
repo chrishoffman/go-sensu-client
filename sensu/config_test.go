@@ -3,6 +3,7 @@ package sensu_test
 import (
 	"fmt"
 	"testing"
+	. "sensu-client/sensu"
 )
 
 func Test_Extend(t *testing.T) {
@@ -13,14 +14,14 @@ func Test_Extend(t *testing.T) {
 	d1["abc"] = []interface{}{"a", "b", "c"}
 	d2["abc"] = []interface{}{"a", "d"}
 
-	c1 := NewConfig(d1)
-	c2 := NewConfig(d2)
+	j1 := NewJson(d1)
+	j2 := NewJson(d2)
 
-	c1.Extend(c2)
-	t.Log(fmt.Sprintf("%+v", c1))
+	j1.Extend(j2)
+	t.Log(fmt.Sprintf("%+v", j1))
 }
 
-func Test_Parse(t *testing.T) {
-	data, _ := parse("../config.json")
-	t.Log(data)
-}
+// func Test_Parse(t *testing.T) {
+// 	data, _ := parseFile("../config.json")
+// 	t.Log(data)
+// }
