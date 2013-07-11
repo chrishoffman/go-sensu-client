@@ -61,7 +61,7 @@ func LoadConfigs(configFile string, configDir string) (*Config, error) {
 	}
 
 	//Reencoding merged JSON to parse to concrete type
-	mergedJson, err := json.Marshal(js.data); 
+	mergedJson, err := json.Marshal(js.data)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to reencode merged json")
 	}

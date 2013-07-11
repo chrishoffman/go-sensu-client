@@ -2,8 +2,8 @@ package sensu_test
 
 import (
 	"fmt"
-	"testing"
 	. "sensu-client/sensu"
+	"testing"
 )
 
 func Test_Extend(t *testing.T) {
