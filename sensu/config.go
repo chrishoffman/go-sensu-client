@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"reflect"
 )
 
 type RabbitmqConfigSSL struct {
@@ -21,12 +22,12 @@ type RabbitmqConfig struct {
 	Ssl      RabbitmqConfigSSL
 }
 
-type Config struct {
+type Json struct {
 	data map[string]interface{}
 }
 
 func LoadSettings(configFile string, configDir string) (*Config, error) {
-	config, ferr := loadFile(configFile)
+	js, ferr := parseFile(configFile)
 	if ferr != nil {
 
 	}
@@ -37,12 +38,12 @@ func LoadSettings(configFile string, configDir string) (*Config, error) {
 	}
 
 	for _, f := range files {
-		cfg, err := loadFile(f.Name())
+		jsd, err := parseFile(f.Name())
 		if err != nil {
-			log.Printf("Could not load %s: %s", f, ferr)
+			log.Printf("Could not load %s: %s", f, err)
 		}
 
-		err = config.Extend(cfg)
+		err = js.Extend(jsd)
 		if err != nil {
 			log.Printf("Error merging configs: %s", err)
 		}
@@ -58,18 +59,7 @@ func (c *Config) Get(key string) (interface{}, bool) {
 	return nil, false
 }
 
-func (c *Config) Validate() (bool, error) {
-
-	return true, nil
-}
-
-func (c1 *Config) Extend(c2 *Config) error {
-	var err error
-	c1.data, err = mapExtend(c1.data, c2.data)
-	return err
-}
-
-func loadFile(filename string) (*Config, error) {
+func parseFile(filename string) (*Json, error) {
 	c := new(Config)
 
 	file, err := ioutil.ReadFile(filename)
@@ -83,4 +73,54 @@ func loadFile(filename string) (*Config, error) {
 	}
 
 	return c, nil
+}
+
+func (j1 *Json) Extend(j2 *Json) error {
+	var err error
+	j1.data, err = mapExtend(j1.data, j2.data)
+	return err
+}
+
+func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	for key, baseVal := range base {
+		if extVal, ok := ext[key]; ok {
+			b := reflect.ValueOf(baseVal)
+			e := reflect.ValueOf(extVal)
+
+			// Keep value of base if types do not match
+			if b.Type() != e.Type() {
+				return nil, fmt.Errorf("Conflicting types for key: %s (%s/%s)", key, b.Kind().String(), e.Kind().String())
+			}
+
+			switch b.Kind() {
+			case reflect.Slice:
+				bSlice := (baseVal).([]interface{})
+				eSlice := (extVal).([]interface{})
+
+				for _, ele := range eSlice {
+					base[key] = sliceExtend(bSlice, ele)
+				}
+			case reflect.Map:
+				bMap := (baseVal).(map[string]interface{})
+				eMap := (extVal).(map[string]interface{})
+				base[key], err = mapExtend(bMap, eMap)
+				if err != nil {
+					return nil, err
+				}
+			default:
+				base[key] = extVal
+			}
+		}
+	}
+	return base, nil
+}
+
+func sliceExtend(slice []interface{}, i interface{}) []interface{} {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
 }
