@@ -16,7 +16,7 @@ func init() {
 }
 
 func main() {
-	settings, err := sensu.LoadSettings(configFile, configDir)
+	settings, err := sensu.LoadConfigs(configFile, configDir)
 	if err != nil {
 		log.Printf("Unable to load settings: %s", err)
 		os.Exit(1)

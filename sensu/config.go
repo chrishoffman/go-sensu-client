@@ -22,11 +22,17 @@ type RabbitmqConfig struct {
 	Ssl      RabbitmqConfigSSL
 }
 
+type Config struct {
+	Checks map[string]interface{}
+	Client map[string]interface{}
+	Rabbitmq RabbitmqConfig
+}
+
 type Json struct {
 	data map[string]interface{}
 }
 
-func LoadSettings(configFile string, configDir string) (*Config, error) {
+func LoadConfigs(configFile string, configDir string) (*Config, error) {
 	js, ferr := parseFile(configFile)
 	if ferr != nil {
 
@@ -49,30 +55,25 @@ func LoadSettings(configFile string, configDir string) (*Config, error) {
 		}
 	}
 
+	config := new(Config)
+
 	return config, nil
 }
 
-func (c *Config) Get(key string) (interface{}, bool) {
-	if val, ok := c.data[key]; ok {
-		return val, true
-	}
-	return nil, false
-}
-
 func parseFile(filename string) (*Json, error) {
-	c := new(Config)
+	j := new(Json)
 
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return c, fmt.Errorf("File error: %v", err)
+		return j, fmt.Errorf("File error: %v", err)
 	}
 
-	err = json.Unmarshal(file, &c.data)
+	err = json.Unmarshal(file, &j.data)
 	if err != nil {
-		return c, fmt.Errorf("json error: %v", err)
+		return j, fmt.Errorf("json error: %v", err)
 	}
 
-	return c, nil
+	return j, nil
 }
 
 func (j1 *Json) Extend(j2 *Json) error {
