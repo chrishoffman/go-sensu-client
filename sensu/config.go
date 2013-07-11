@@ -9,23 +9,24 @@ import (
 )
 
 type RabbitmqConfigSSL struct {
-	PrivateKeyFile string
-	CertChainFile  string
+	PrivateKeyFile string `json:"private_key_file"`
+	CertChainFile  string `json:"cert_chain_file"`
 }
 
 type RabbitmqConfig struct {
-	Host     string
-	Port     int
-	Vhost    string
-	User     string
-	Password string
-	Ssl      RabbitmqConfigSSL
+	Host     string            `json:"host"`
+	Port     int               `json:"port"`
+	Vhost    string            `json:"vhost"`
+	User     string            `json:"user"`
+	Password string            `json:"password"`
+	Ssl      RabbitmqConfigSSL `json:"ssl"`
 }
 
 type Config struct {
-	Checks   map[string]interface{}
-	Client   map[string]interface{}
-	Rabbitmq RabbitmqConfig
+	Checks   map[string]interface{} `json:"checks"`
+	Client   map[string]interface{} `json:"client"`
+	Rabbitmq RabbitmqConfig         `json:"rabbitmq"`
+	data     *Json
 }
 
 type Json struct {
@@ -59,33 +60,16 @@ func LoadConfigs(configFile string, configDir string) (*Config, error) {
 		}
 	}
 
-	//var err error
+	//Reencoding merged JSON to parse to concrete type
+	mergedJson, err := json.Marshal(js.data); 
+	if err != nil {
+		return nil, fmt.Errorf("Unable to reencode merged json")
+	}
 	config := new(Config)
-	config.loadRabbitmqConfig(js)
+	json.Unmarshal(mergedJson, &config)
+	config.data = js
 
 	return config, nil
-}
-
-func (c *Config) loadRabbitmqConfig(j *Json) error {
-	r := (j.data["rabbitmq"]).(map[string]interface{})
-	c.Rabbitmq.Host = (r["host"]).(string)
-	c.Rabbitmq.Port = int((r["port"]).(float64))
-	c.Rabbitmq.Vhost = (r["vhost"]).(string)
-	c.Rabbitmq.User = (r["user"]).(string)
-	c.Rabbitmq.Password = (r["password"]).(string)
-	// TODO: ssl
-
-	return nil
-}
-
-func (c *Config) loadClientConfig(j *Json) error {
-	
-	return nil
-}
-
-func (c *Config) loadChecksConfig(j *Json) error {
-	
-	return nil
 }
 
 func parseFile(filename string) (*Json, error) {
