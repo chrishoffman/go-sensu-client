@@ -17,8 +17,12 @@ func Test_Extend(t *testing.T) {
 	j1 := NewJson(d1)
 	j2 := NewJson(d2)
 
-	j1.Extend(j2)
-	t.Log(fmt.Sprintf("%+v", j1))
+	err := j1.Extend(j2)
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(fmt.Sprintf("%+v", j1))
+	}
 }
 
 // func Test_Parse(t *testing.T) {
