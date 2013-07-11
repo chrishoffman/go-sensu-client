@@ -12,6 +12,9 @@ type MessageQueuer interface {
 	Connect(cfg RabbitmqConfig, connected chan bool, errc chan error)
 	Disconnected() chan *amqp.Error
 	ExchangeDeclare(name string, kind string) error
+	QueueDeclare(name string) (amqp.Queue, error)
+	QueueBind(name, key, source string) error
+	Consume(name, consumer string) (<-chan amqp.Delivery, error)
 	Publish(exchange string, key string, msg amqp.Publishing) error
 }
 
@@ -63,6 +66,39 @@ func (r *Rabbitmq) ExchangeDeclare(name, kind string) error {
 		name,
 		kind,
 		false, // All exchanges are not declared durable
+		false,
+		false,
+		false,
+		nil,
+	)
+}
+
+func (r *Rabbitmq) QueueDeclare(name string) (amqp.Queue, error) {
+	return r.channel.QueueDeclare(
+		"",
+		false,
+		true,
+		false,
+		false,
+		nil,
+	)
+}
+
+func (r *Rabbitmq) QueueBind(name, key, source string) error {
+	return r.channel.QueueBind(
+		name,
+		key,
+		source,
+		false,
+		nil,
+	)
+}
+
+func (r *Rabbitmq) Consume(name, consumer string) (<-chan amqp.Delivery, error) {
+	return r.channel.Consume(
+		name,
+		consumer,
+		false,
 		false,
 		false,
 		false,
