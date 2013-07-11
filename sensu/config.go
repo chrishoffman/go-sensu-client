@@ -23,8 +23,8 @@ type RabbitmqConfig struct {
 }
 
 type Config struct {
-	Checks map[string]interface{}
-	Client map[string]interface{}
+	Checks   map[string]interface{}
+	Client   map[string]interface{}
 	Rabbitmq RabbitmqConfig
 }
 

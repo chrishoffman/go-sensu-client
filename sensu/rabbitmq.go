@@ -11,7 +11,7 @@ import (
 type MessageQueuer interface {
 	Connect(cfg RabbitmqConfig, connected chan bool, errc chan error)
 	Disconnected() chan *amqp.Error
-	ExchangeDeclare(name string, kind string) error	
+	ExchangeDeclare(name string, kind string) error
 	Publish(exchange string, key string, msg amqp.Publishing) error
 }
 

@@ -1,10 +1,10 @@
 package sensu
 
 import (
-	// "github.com/streadway/amqp"
-	// "log"
-	// "strconv"
-	// "time"
+// "github.com/streadway/amqp"
+// "log"
+// "strconv"
+// "time"
 )
 
 type Subscriber struct {

@@ -7,14 +7,14 @@ import (
 )
 
 type Client struct {
-	config     *Config
-	r          MessageQueuer
-	k          *Keepalive
+	config *Config
+	r      MessageQueuer
+	k      *Keepalive
 }
 
 func NewClient(s *Config) *Client {
 	return &Client{
-		r:      new(Rabbitmq), 
+		r:      new(Rabbitmq),
 		config: s,
 	}
 }
