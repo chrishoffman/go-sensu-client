@@ -3,7 +3,6 @@ package sensu
 import (
 	"encoding/json"
 	"reflect"
-	. "sensu-client/sensu"
 	"testing"
 )
 
