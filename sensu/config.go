@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
 	"reflect"
 )
 
@@ -40,7 +41,7 @@ func NewJson(data map[string]interface{}) *Json {
 func LoadConfigs(configFile string, configDir string) (*Config, error) {
 	js, ferr := parseFile(configFile)
 	if ferr != nil {
-
+		log.Printf("Unable to open config file: %s", ferr)
 	}
 
 	files, derr := ioutil.ReadDir(configDir)
@@ -49,9 +50,9 @@ func LoadConfigs(configFile string, configDir string) (*Config, error) {
 	}
 
 	for _, f := range files {
-		jsd, err := parseFile(f.Name())
+		jsd, err := parseFile(filepath.Join(configDir, f.Name()))
 		if err != nil {
-			log.Printf("Could not load %s: %s", f, err)
+			log.Printf("Could not load %s: %s", f.Name(), err)
 		}
 
 		err = js.Extend(jsd)

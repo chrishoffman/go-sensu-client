@@ -1,7 +1,6 @@
-package sensu_test
+package sensu
 
 import (
-	//"fmt"
 	"encoding/json"
 	"reflect"
 	. "sensu-client/sensu"

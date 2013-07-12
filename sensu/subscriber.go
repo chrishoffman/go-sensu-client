@@ -11,7 +11,7 @@ type Subscriber struct {
 }
 
 type subscription struct {
-	s string
+	name string
 }
 
 func handle(deliveries <-chan amqp.Delivery, done chan error) {

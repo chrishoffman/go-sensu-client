@@ -1,6 +1,7 @@
 package sensu
 
 import (
+	"fmt"
 	"github.com/streadway/amqp"
 	"log"
 	"net/url"
@@ -9,7 +10,7 @@ import (
 )
 
 type MessageQueuer interface {
-	Connect(cfg RabbitmqConfig, connected chan bool, errc chan error)
+	Connect(connected chan bool, errc chan error)
 	Disconnected() chan *amqp.Error
 	ExchangeDeclare(name string, kind string) error
 	QueueDeclare(name string) (amqp.Queue, error)
@@ -27,20 +28,16 @@ type Rabbitmq struct {
 
 const rabbitmqRetryInterval = 5 * time.Second
 
-func (r *Rabbitmq) Connect(cfg RabbitmqConfig, connected chan bool, errc chan error) {
+func NewRabbitmq(cfg RabbitmqConfig) *Rabbitmq {
+	uri := createRabbitmqUri(cfg)
+	return &Rabbitmq{uri:uri}
+}
 
-	u := url.URL{
-		Scheme: "amqp",
-		Host:   cfg.Host + ":" + strconv.FormatInt(int64(cfg.Port), 10),
-		Path:   cfg.Vhost,
-		User:   url.UserPassword(cfg.User, cfg.Password),
-	}
-	uri := u.String()
-
+func (r *Rabbitmq) Connect(connected chan bool, errc chan error) {
 	reset := make(chan bool)
 	done := make(chan bool)
 	timer := time.AfterFunc(0, func() {
-		r.connect(uri, done)
+		r.connect(r.uri, done)
 		reset <- true
 	})
 	defer timer.Stop()
@@ -138,4 +135,14 @@ func (r *Rabbitmq) connect(uri string, done chan bool) {
 	r.channel.NotifyClose(r.disconnected)
 
 	done <- true
+}
+
+func createRabbitmqUri(cfg RabbitmqConfig) (string) {
+	u := url.URL{
+		Scheme: "amqp",
+		Host:   fmt.Sprintf("%s:%s", cfg.Host, strconv.FormatInt(int64(cfg.Port), 10)),
+		Path:   fmt.Sprintf("/%s", cfg.Vhost),
+		User:   url.UserPassword(cfg.User, cfg.Password),
+	}
+	return u.String()
 }

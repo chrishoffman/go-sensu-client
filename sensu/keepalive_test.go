@@ -1,4 +1,4 @@
-package sensu_test
+package sensu
 
 // import (
 // 	"testing"
