@@ -16,8 +16,7 @@ type Processor interface {
 type Client struct {
 	config    *Config
 	q         MessageQueuer
-	processes []*Processor
-	k         *Keepalive
+	processes []Processor
 }
 
 func NewClient(c *Config) *Client {
@@ -34,15 +33,22 @@ func (c *Client) Start(errc chan error) {
 	connected := make(chan bool)
 	go c.q.Connect(connected, errc)
 
+	c.processes = []Processor{NewKeepalive(c.q, 5 * time.Second)}
+
 	for {
 		select {
 		case <-connected:
-			c.Keepalive(5 * time.Second)
+			for _, proc := range c.processes {
+				proc.Start()
+			}
+
 			disconnected = c.q.Disconnected() // Enable disconnect channel
 		case errd := <-disconnected:
+			disconnected = nil // Disable disconnect channel
+
 			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()
-			disconnected = nil // Disable disconnect channel
+
 			time.Sleep(10 * time.Second)
 			go c.q.Connect(connected, errc)
 		}
@@ -51,7 +57,9 @@ func (c *Client) Start(errc chan error) {
 
 func (c *Client) Reset() chan error {
 	// Stop keepalive timer
-	c.k.Stop()
+	for _, proc := range c.processes {
+		proc.Stop()
+	}
 
 	return nil
 }
@@ -59,9 +67,4 @@ func (c *Client) Reset() chan error {
 func (c *Client) Shutdown() chan error {
 
 	return nil
-}
-
-func (c *Client) Keepalive(interval time.Duration) {
-	c.k = NewKeepalive(c.q, interval)
-	go c.k.Start()
 }
