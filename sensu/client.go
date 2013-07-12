@@ -47,9 +47,11 @@ func (c *Client) Start(errc chan error) {
 					go proc.Restart()
 				}
 			}
-			disconnected = c.q.Disconnected() // Enable disconnect channel
+			// Enable disconnect channel
+			disconnected = c.q.Disconnected()
 		case errd := <-disconnected:
-			disconnected = nil // Disable disconnect channel
+			// Disable disconnect channel
+			disconnected = nil
 
 			log.Printf("RabbitMQ disconnected: %s", errd)
 			c.Reset()
