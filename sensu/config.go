@@ -34,10 +34,6 @@ type Json struct {
 	data map[string]interface{}
 }
 
-func NewJson(data map[string]interface{}) *Json {
-	return &Json{data}
-}
-
 func LoadConfigs(configFile string, configDir string) (*Config, error) {
 	js, ferr := parseFile(configFile)
 	if ferr != nil {

@@ -9,8 +9,6 @@ import (
 type Processor interface {
 	Start()
 	Stop()
-	Restart()
-	Close()
 }
 
 type Client struct {
@@ -28,7 +26,6 @@ func NewClient(c *Config) *Client {
 func (c *Client) Start(errc chan error) {
 	var disconnected chan *amqp.Error
 	connected := make(chan bool)
-	init := true
 
 	c.q = NewRabbitmq(c.config.Rabbitmq)
 	go c.q.Connect(connected, errc)
@@ -40,12 +37,7 @@ func (c *Client) Start(errc chan error) {
 		select {
 		case <-connected:
 			for _, proc := range c.processes {
-				if init {
-					go proc.Start()
-					init = false
-				} else {
-					go proc.Restart()
-				}
+				go proc.Start()
 			}
 			// Enable disconnect channel
 			disconnected = c.q.Disconnected()
@@ -54,25 +46,12 @@ func (c *Client) Start(errc chan error) {
 			disconnected = nil
 
 			log.Printf("RabbitMQ disconnected: %s", errd)
-			c.Reset()
+			for _, proc := range c.processes {
+				proc.Stop()
+			}
 
 			time.Sleep(10 * time.Second)
 			go c.q.Connect(connected, errc)
 		}
 	}
-}
-
-func (c *Client) Reset() chan error {
-	for _, proc := range c.processes {
-		proc.Stop()
-	}
-	return nil
-}
-
-func (c *Client) Shutdown() chan error {
-	// Stop keepalive timer
-	for _, proc := range c.processes {
-		proc.Close()
-	}
-	return nil
 }
