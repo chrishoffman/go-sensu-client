@@ -27,21 +27,26 @@ func NewClient(c *Config) *Client {
 
 func (c *Client) Start(errc chan error) {
 	var disconnected chan *amqp.Error
+	connected := make(chan bool)
+	init := true
 
 	c.q = NewRabbitmq(c.config.Rabbitmq)
-
-	connected := make(chan bool)
 	go c.q.Connect(connected, errc)
 
 	c.processes = []Processor{NewKeepalive(c.q, 5 * time.Second)}
+
 
 	for {
 		select {
 		case <-connected:
 			for _, proc := range c.processes {
-				proc.Start()
+				if init {
+					go proc.Start()
+					init = false
+				} else {
+					go proc.Restart()
+				}
 			}
-
 			disconnected = c.q.Disconnected() // Enable disconnect channel
 		case errd := <-disconnected:
 			disconnected = nil // Disable disconnect channel
@@ -56,15 +61,16 @@ func (c *Client) Start(errc chan error) {
 }
 
 func (c *Client) Reset() chan error {
-	// Stop keepalive timer
 	for _, proc := range c.processes {
 		proc.Stop()
 	}
-
 	return nil
 }
 
 func (c *Client) Shutdown() chan error {
-
+	// Stop keepalive timer
+	for _, proc := range c.processes {
+		proc.Close()
+	}
 	return nil
 }

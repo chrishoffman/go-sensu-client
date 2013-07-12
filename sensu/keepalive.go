@@ -8,16 +8,16 @@ import (
 )
 
 type Keepalive struct {
-	r        MessageQueuer
+	q        MessageQueuer
 	interval time.Duration
 	reset    chan bool
 	stop     chan bool
 	close    chan bool
 }
 
-func NewKeepalive(r MessageQueuer, interval time.Duration) *Keepalive {
+func NewKeepalive(q MessageQueuer, interval time.Duration) *Keepalive {
 	return &Keepalive{
-		r:        r,
+		q:        q,
 		interval: interval,
 		reset:    make(chan bool),
 		stop:     make(chan bool),
@@ -26,7 +26,7 @@ func NewKeepalive(r MessageQueuer, interval time.Duration) *Keepalive {
 }
 
 func (k *Keepalive) Start() {
-	if err := k.r.ExchangeDeclare(
+	if err := k.q.ExchangeDeclare(
 		"keepalives",
 		"direct",
 	); err != nil {
@@ -71,7 +71,7 @@ func (k *Keepalive) publish(timestamp time.Time) {
 		DeliveryMode: amqp.Persistent,
 	}
 
-	if err := k.r.Publish(
+	if err := k.q.Publish(
 		"keepalives",
 		"",
 		msg,
