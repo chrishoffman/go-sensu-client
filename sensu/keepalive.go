@@ -8,18 +8,18 @@ import (
 )
 
 type Keepalive struct {
-	q        MessageQueuer
-	config   *Config
-	close    chan bool
+	q      MessageQueuer
+	config *Config
+	close  chan bool
 }
 
 const keepaliveInterval = 20 * time.Second
 
 func NewKeepalive(q MessageQueuer, config *Config) *Keepalive {
 	return &Keepalive{
-		q:        q,
-		config:   config,
-		close:    make(chan bool),
+		q:      q,
+		config: config,
+		close:  make(chan bool),
 	}
 }
 

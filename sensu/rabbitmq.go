@@ -30,7 +30,7 @@ const rabbitmqRetryInterval = 5 * time.Second
 
 func NewRabbitmq(cfg RabbitmqConfig) *Rabbitmq {
 	uri := createRabbitmqUri(cfg)
-	return &Rabbitmq{uri:uri}
+	return &Rabbitmq{uri: uri}
 }
 
 func (r *Rabbitmq) Connect(connected chan bool, errc chan error) {
@@ -137,7 +137,7 @@ func (r *Rabbitmq) connect(uri string, done chan bool) {
 	done <- true
 }
 
-func createRabbitmqUri(cfg RabbitmqConfig) (string) {
+func createRabbitmqUri(cfg RabbitmqConfig) string {
 	u := url.URL{
 		Scheme: "amqp",
 		Host:   fmt.Sprintf("%s:%s", cfg.Host, strconv.FormatInt(int64(cfg.Port), 10)),

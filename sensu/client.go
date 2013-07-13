@@ -19,7 +19,7 @@ type Client struct {
 
 func NewClient(c *Config) *Client {
 	return &Client{
-		config:  c,
+		config: c,
 	}
 }
 
@@ -31,7 +31,6 @@ func (c *Client) Start(errc chan error) {
 	go c.q.Connect(connected, errc)
 
 	c.processes = []Processor{NewKeepalive(c.q, c.config)}
-
 
 	for {
 		select {
