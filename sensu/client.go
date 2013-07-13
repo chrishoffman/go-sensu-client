@@ -7,6 +7,7 @@ import (
 )
 
 type Processor interface {
+	Create(MessageQueuer, *Config)
 	Start()
 	Stop()
 }
@@ -30,7 +31,8 @@ func (c *Client) Start(errc chan error) {
 	c.q = NewRabbitmq(c.config.Rabbitmq)
 	go c.q.Connect(connected, errc)
 
-	c.processes = []Processor{NewKeepalive(c.q, c.config)}
+	k := new(Keepalive).Create(c.q, c.config)
+	c.processes = []Processor{k}
 
 	for {
 		select {

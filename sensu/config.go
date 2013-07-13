@@ -11,9 +11,9 @@ import (
 )
 
 type ClientConfig struct {
-	Name           string   `json:"name"`
-	Address        string   `json:"address"`
-	Subscripations []string `json:"subscriptions"`
+	Name          string   `json:"name"`
+	Address       string   `json:"address"`
+	Subscriptions []string `json:"subscriptions"`
 }
 
 type RabbitmqConfigSSL struct {
@@ -149,4 +149,8 @@ func sliceExtend(slice []interface{}, i interface{}) []interface{} {
 		}
 	}
 	return append(slice, i)
+}
+
+func (c *Config) GetData() *simplejson.Json {
+	return c.data
 }
