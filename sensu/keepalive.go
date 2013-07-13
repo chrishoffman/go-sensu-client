@@ -2,8 +2,8 @@ package sensu
 
 import (
 	"github.com/streadway/amqp"
+	"github.com/bitly/go-simplejson"
 	"log"
-	"strconv"
 	"time"
 )
 
@@ -15,23 +15,24 @@ type Keepalive struct {
 
 const keepaliveInterval = 20 * time.Second
 
-func (k *Keepalive) Create(q MessageQueuer, config *Config) {
+func (k *Keepalive) Start(q MessageQueuer, config *Config) {
 	k.q = q
 	k.config = config
 	k.close = make(chan bool)
-}
 
-func (k *Keepalive) Start() {
 	if err := k.q.ExchangeDeclare(
 		"keepalives",
 		"direct",
 	); err != nil {
 		log.Println("Exchange Declare: %s", err)
+		//panic?
 	}
 
+	clientConfig := config.GetData().Get("client")
 	reset := make(chan bool)
 	timer := time.AfterFunc(0, func() {
-		k.publish(time.Now())
+		payload := createKeepalivePayload(clientConfig, time.Now())
+		k.publish(payload)
 		reset <- true
 	})
 	defer timer.Stop()
@@ -50,21 +51,25 @@ func (k *Keepalive) Stop() {
 	k.close <- true
 }
 
-func (k *Keepalive) publish(timestamp time.Time) {
-	unixTimestamp := int64(timestamp.Unix())
-	msg := amqp.Publishing{
-		ContentType:  "application/json",
-		Body:         []byte(strconv.FormatInt(unixTimestamp, 10)),
-		DeliveryMode: amqp.Persistent,
-	}
-
+func (k *Keepalive) publish(payload amqp.Publishing) {
 	if err := k.q.Publish(
 		"keepalives",
 		"",
-		msg,
+		payload,
 	); err != nil {
 		log.Printf("keepalive.publish: %v", err)
 		return
 	}
-	log.Printf("Keepalive published: %s", strconv.FormatInt(unixTimestamp, 10))
+	log.Print("Keepalive published")
+}
+
+func createKeepalivePayload(clientConfig *simplejson.Json, timestamp time.Time) (amqp.Publishing) {
+	payload := clientConfig
+	payload.Set("timestamp", int64(timestamp.Unix()))
+	body, _ := payload.MarshalJSON()
+	return amqp.Publishing{
+		ContentType:  "application/octet-stream",
+		Body:         body,
+		DeliveryMode: amqp.Transient,
+	}
 }

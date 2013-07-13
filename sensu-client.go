@@ -24,7 +24,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	c := sensu.NewClient(settings)
+	processes := []sensu.Processor{new(sensu.Keepalive)}
+	c := sensu.NewClient(settings, processes)
 
 	errc := make(chan error)
 	c.Start(errc)

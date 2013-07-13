@@ -7,20 +7,19 @@ import (
 )
 
 type Processor interface {
-	Create(MessageQueuer, *Config)
-	Start()
+	Start(MessageQueuer, *Config)
 	Stop()
 }
 
 type Client struct {
 	config    *Config
-	q         MessageQueuer
 	processes []Processor
 }
 
-func NewClient(c *Config) *Client {
+func NewClient(c *Config, p []Processor) *Client {
 	return &Client{
-		config: c,
+		config:    c,
+		processes: p,
 	}
 }
 
@@ -28,20 +27,17 @@ func (c *Client) Start(errc chan error) {
 	var disconnected chan *amqp.Error
 	connected := make(chan bool)
 
-	c.q = NewRabbitmq(c.config.Rabbitmq)
-	go c.q.Connect(connected, errc)
-
-	k := new(Keepalive).Create(c.q, c.config)
-	c.processes = []Processor{k}
+	q := NewRabbitmq(c.config.Rabbitmq)
+	go q.Connect(connected, errc)
 
 	for {
 		select {
 		case <-connected:
 			for _, proc := range c.processes {
-				go proc.Start()
+				go proc.Start(q, c.config)
 			}
 			// Enable disconnect channel
-			disconnected = c.q.Disconnected()
+			disconnected = q.Disconnected()
 		case errd := <-disconnected:
 			// Disable disconnect channel
 			disconnected = nil
@@ -52,7 +48,7 @@ func (c *Client) Start(errc chan error) {
 			}
 
 			time.Sleep(10 * time.Second)
-			go c.q.Connect(connected, errc)
+			go q.Connect(connected, errc)
 		}
 	}
 }
