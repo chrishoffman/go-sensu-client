@@ -15,11 +15,13 @@ type Keepalive struct {
 
 const keepaliveInterval = 20 * time.Second
 
-func (k *Keepalive) Start(q MessageQueuer, config *Config) {
+func (k *Keepaive) Init(q MessageQueuer, config *Config) {
 	k.q = q
 	k.config = config
 	k.close = make(chan bool)
+}
 
+func (k *Keepalive) Start() {
 	if err := k.q.ExchangeDeclare(
 		"keepalives",
 		"direct",

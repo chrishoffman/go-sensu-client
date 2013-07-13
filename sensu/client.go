@@ -7,7 +7,8 @@ import (
 )
 
 type Processor interface {
-	Start(MessageQueuer, *Config)
+	Init(MessageQueuer, *Config)
+	Start()
 	Stop()
 }
 
@@ -34,7 +35,8 @@ func (c *Client) Start(errc chan error) {
 		select {
 		case <-connected:
 			for _, proc := range c.processes {
-				go proc.Start(q, c.config)
+				proc.Init(q, c.config)
+				go proc.Start()
 			}
 			// Enable disconnect channel
 			disconnected = q.Disconnected()
