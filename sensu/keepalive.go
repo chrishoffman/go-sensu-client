@@ -15,7 +15,7 @@ type Keepalive struct {
 
 const keepaliveInterval = 20 * time.Second
 
-func (k *Keepaive) Init(q MessageQueuer, config *Config) {
+func (k *Keepalive) Init(q MessageQueuer, config *Config) {
 	k.q = q
 	k.config = config
 	k.close = make(chan bool)
@@ -30,7 +30,7 @@ func (k *Keepalive) Start() {
 		//panic?
 	}
 
-	clientConfig := config.GetData().Get("client")
+	clientConfig := k.config.Data().Get("client")
 	reset := make(chan bool)
 	timer := time.AfterFunc(0, func() {
 		payload := createKeepalivePayload(clientConfig, time.Now())

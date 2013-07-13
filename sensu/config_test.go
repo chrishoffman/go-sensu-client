@@ -80,9 +80,9 @@ func Test_Extend(t *testing.T) {
 			continue
 		}
 
-		s := &Json{src}
-		d := &Json{dst}
-		e := &Json{expected}
+		s := &ConfigData{src}
+		d := &ConfigData{dst}
+		e := &ConfigData{expected}
 
 		err := s.Extend(d)
 		if tuple.errorExpected {

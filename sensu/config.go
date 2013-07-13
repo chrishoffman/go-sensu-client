@@ -127,8 +127,6 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 				if err != nil {
 					return nil, err
 				}
-			default:
-				// Do nothing, prefer base
 			}
 		}
 	}
@@ -151,6 +149,6 @@ func sliceExtend(slice []interface{}, i interface{}) []interface{} {
 	return append(slice, i)
 }
 
-func (c *Config) GetData() *simplejson.Json {
+func (c *Config) Data() *simplejson.Json {
 	return c.data
 }
