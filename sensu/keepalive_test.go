@@ -2,7 +2,6 @@ package sensu
 
 import (
 	"github.com/bitly/go-simplejson"
-	// "github.com/streadway/amqp"
 	"testing"
 	"time"
 )

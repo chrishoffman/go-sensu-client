@@ -24,7 +24,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	processes := []sensu.Processor{new(sensu.Keepalive)}
+	processes := []sensu.Processor{
+		new(sensu.Keepalive),
+		new(sensu.Subscriber),
+	}
 	c := sensu.NewClient(settings, processes)
 
 	c.Start()
