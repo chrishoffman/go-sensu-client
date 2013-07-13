@@ -7,7 +7,7 @@ import (
 )
 
 func Test_Extend(t *testing.T) {
-	for _, tuple := range []struct {
+	for i, tuple := range []struct {
 		src           string
 		dst           string
 		expected      string
@@ -97,7 +97,7 @@ func Test_Extend(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(s, e) {
-				t.Errorf("expected %v, got %v", e, s)
+				t.Errorf("%d. expected %v, got %v", i, e, s)
 			}
 		}
 	}

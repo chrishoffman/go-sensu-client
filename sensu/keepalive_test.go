@@ -21,8 +21,9 @@ func Test_KeepalivePayload(t *testing.T) {
 		}
 
 		bodyTs := time.Unix(int64(v), 0)
-		if bodyTs != timestamp.Round(time.Second) {
-			t.Errorf("timestamps do not match (%s/%s)", bodyTs, timestamp)
+		roundedTs := timestamp.Truncate(time.Second)
+		if bodyTs != roundedTs {
+			t.Errorf("timestamps do not match (%s/%s)", bodyTs, roundedTs)
 		}
 	} else {
 		t.Errorf("timestamp not found in payload body: %v", payloadBody)
