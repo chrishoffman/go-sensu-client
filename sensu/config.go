@@ -3,6 +3,7 @@ package sensu
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/bitly/go-simplejson"
 	"io/ioutil"
 	"log"
 	"path/filepath"
@@ -33,10 +34,10 @@ type Config struct {
 	Checks   map[string]interface{} `json:"checks"`
 	Client   ClientConfig           `json:"client"`
 	Rabbitmq RabbitmqConfig         `json:"rabbitmq"`
-	data     *Json
+	data     *simplejson.Json
 }
 
-type Json struct {
+type ConfigData struct {
 	data map[string]interface{}
 }
 
@@ -72,13 +73,13 @@ func LoadConfigs(configFile string, configDirs []string) (*Config, error) {
 	}
 	config := new(Config)
 	json.Unmarshal(mergedJson, &config)
-	config.data = js
+	config.data, _ = simplejson.NewJson(mergedJson)
 
 	return config, nil
 }
 
-func parseFile(filename string) (*Json, error) {
-	j := new(Json)
+func parseFile(filename string) (*ConfigData, error) {
+	j := new(ConfigData)
 
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -93,7 +94,7 @@ func parseFile(filename string) (*Json, error) {
 	return j, nil
 }
 
-func (j1 *Json) Extend(j2 *Json) (err error) {
+func (j1 *ConfigData) Extend(j2 *ConfigData) (err error) {
 	j1.data, err = mapExtend(j1.data, j2.data)
 	return
 }
