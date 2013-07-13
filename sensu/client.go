@@ -45,12 +45,20 @@ func (c *Client) Start(errc chan error) {
 			disconnected = nil
 
 			log.Printf("RabbitMQ disconnected: %s", errd)
-			for _, proc := range c.processes {
-				proc.Stop()
-			}
+			c.Stop()
 
 			time.Sleep(10 * time.Second)
 			go q.Connect(connected, errc)
 		}
 	}
+}
+
+func (c *Client) Stop() {
+	for _, proc := range c.processes {
+		proc.Stop()
+	}
+}
+
+func (c *Client) Shutdown() {
+	// Disconnect rabbitmq
 }

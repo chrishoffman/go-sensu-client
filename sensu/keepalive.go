@@ -1,8 +1,8 @@
 package sensu
 
 import (
-	"github.com/streadway/amqp"
 	"github.com/bitly/go-simplejson"
+	"github.com/streadway/amqp"
 	"log"
 	"time"
 )
@@ -65,7 +65,7 @@ func (k *Keepalive) publish(payload amqp.Publishing) {
 	log.Print("Keepalive published")
 }
 
-func createKeepalivePayload(clientConfig *simplejson.Json, timestamp time.Time) (amqp.Publishing) {
+func createKeepalivePayload(clientConfig *simplejson.Json, timestamp time.Time) amqp.Publishing {
 	payload := clientConfig
 	payload.Set("timestamp", int64(timestamp.Unix()))
 	body, _ := payload.MarshalJSON()
