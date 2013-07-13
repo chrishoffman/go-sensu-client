@@ -9,14 +9,16 @@ import (
 
 type Keepalive struct {
 	q        MessageQueuer
-	interval time.Duration
+	config   *Config
 	close    chan bool
 }
 
-func NewKeepalive(q MessageQueuer, interval time.Duration) *Keepalive {
+const keepaliveInterval = 20 * time.Second
+
+func NewKeepalive(q MessageQueuer, config *Config) *Keepalive {
 	return &Keepalive{
 		q:        q,
-		interval: interval,
+		config:   config,
 		close:    make(chan bool),
 	}
 }
@@ -39,7 +41,7 @@ func (k *Keepalive) Start() {
 	for {
 		select {
 		case <-reset:
-			timer.Reset(k.interval)
+			timer.Reset(keepaliveInterval)
 		case <-k.close:
 			return
 		}

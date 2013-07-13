@@ -9,6 +9,12 @@ import (
 	"reflect"
 )
 
+type ClientConfig struct {
+	Name           string   `json:"name"`
+	Address        string   `json:"address"`
+	Subscripations []string `json:"subscriptions"`
+}
+
 type RabbitmqConfigSSL struct {
 	PrivateKeyFile string `json:"private_key_file"`
 	CertChainFile  string `json:"cert_chain_file"`
@@ -25,7 +31,7 @@ type RabbitmqConfig struct {
 
 type Config struct {
 	Checks   map[string]interface{} `json:"checks"`
-	Client   map[string]interface{} `json:"client"`
+	Client   ClientConfig           `json:"client"`
 	Rabbitmq RabbitmqConfig         `json:"rabbitmq"`
 	data     *Json
 }
@@ -34,26 +40,28 @@ type Json struct {
 	data map[string]interface{}
 }
 
-func LoadConfigs(configFile string, configDir string) (*Config, error) {
+func LoadConfigs(configFile string, configDirs []string) (*Config, error) {
 	js, ferr := parseFile(configFile)
 	if ferr != nil {
 		log.Printf("Unable to open config file: %s", ferr)
 	}
 
-	files, derr := ioutil.ReadDir(configDir)
-	if derr != nil {
-		log.Printf("Unable to open config directory: %s", derr)
-	}
-
-	for _, f := range files {
-		jsd, err := parseFile(filepath.Join(configDir, f.Name()))
-		if err != nil {
-			log.Printf("Could not load %s: %s", f.Name(), err)
+	for _, dir := range configDirs {
+		files, derr := ioutil.ReadDir(dir)
+		if derr != nil {
+			log.Printf("Unable to open config directory: %s", derr)
 		}
 
-		err = js.Extend(jsd)
-		if err != nil {
-			log.Printf("Error merging configs: %s", err)
+		for _, f := range files {
+			jsd, err := parseFile(filepath.Join(dir, f.Name()))
+			if err != nil {
+				log.Printf("Could not load %s: %s", f.Name(), err)
+			}
+
+			err = js.Extend(jsd)
+			if err != nil {
+				log.Printf("Error merging configs: %s", err)
+			}
 		}
 	}
 

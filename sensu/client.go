@@ -30,7 +30,7 @@ func (c *Client) Start(errc chan error) {
 	c.q = NewRabbitmq(c.config.Rabbitmq)
 	go c.q.Connect(connected, errc)
 
-	c.processes = []Processor{NewKeepalive(c.q, 5 * time.Second)}
+	c.processes = []Processor{NewKeepalive(c.q, c.config)}
 
 
 	for {
