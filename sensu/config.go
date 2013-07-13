@@ -144,7 +144,6 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 func sliceExtend(slice []interface{}, i interface{}) []interface{} {
 	for _, ele := range slice {
 		if ele == i {
-			log.Printf("Found %v", i)
 			return slice
 		}
 	}
