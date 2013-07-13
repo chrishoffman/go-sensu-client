@@ -27,6 +27,5 @@ func main() {
 	processes := []sensu.Processor{new(sensu.Keepalive)}
 	c := sensu.NewClient(settings, processes)
 
-	errc := make(chan error)
-	c.Start(errc)
+	c.Start()
 }

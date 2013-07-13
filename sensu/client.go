@@ -24,12 +24,12 @@ func NewClient(c *Config, p []Processor) *Client {
 	}
 }
 
-func (c *Client) Start(errc chan error) {
+func (c *Client) Start() {
 	var disconnected chan *amqp.Error
 	connected := make(chan bool)
 
 	q := NewRabbitmq(c.config.Rabbitmq)
-	go q.Connect(connected, errc)
+	go q.Connect(connected)
 
 	for {
 		select {
@@ -48,7 +48,7 @@ func (c *Client) Start(errc chan error) {
 			c.Stop()
 
 			time.Sleep(10 * time.Second)
-			go q.Connect(connected, errc)
+			go q.Connect(connected)
 		}
 	}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type MessageQueuer interface {
-	Connect(connected chan bool, errc chan error)
+	Connect(connected chan bool)
 	Disconnected() chan *amqp.Error
 	ExchangeDeclare(name string, kind string) error
 	QueueDeclare(name string) (amqp.Queue, error)
@@ -33,7 +33,7 @@ func NewRabbitmq(cfg RabbitmqConfig) *Rabbitmq {
 	return &Rabbitmq{uri: uri}
 }
 
-func (r *Rabbitmq) Connect(connected chan bool, errc chan error) {
+func (r *Rabbitmq) Connect(connected chan bool) {
 	reset := make(chan bool)
 	done := make(chan bool)
 	timer := time.AfterFunc(0, func() {
