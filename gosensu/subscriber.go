@@ -7,7 +7,6 @@ import (
 )
 
 type Subscriber struct {
-	subs       []string
 	deliveries <-chan amqp.Delivery
 	done       chan error
 }
@@ -20,7 +19,13 @@ func (s *Subscriber) Init(q MessageQueuer, c *Config) error {
 	}
 	log.Printf("declared Queue")
 
-	for _, sub := range s.subs {
+	var subscriptions []string
+	subscriptions, err = c.Data().GetPath("client", "subscriptions").StringArray()
+	if err != nil {
+		return fmt.Errorf("Subscriptions are not in a string array format")
+	}
+
+	for _, sub := range subscriptions {
 		log.Printf("declaring Exchange (%q)", sub)
 		err = q.ExchangeDeclare(sub, "fanout")
 		if err != nil {
