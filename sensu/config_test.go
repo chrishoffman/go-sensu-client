@@ -61,6 +61,12 @@ func Test_Extend(t *testing.T) {
 			expected:      `{"1": { "b":1, "2": { "3": {"a":"A", "b":3, "n":[1,2,3,4]} }, "a":3 }}`,
 			errorExpected: false,
 		},
+		{
+			src:           `{"1": { "b":1, "2": { "3": {"a":"A", "b":3, "n":[1,2    ]} }        }}`,
+			dst:           `{"1": {        "2": { "3": {"a":"B",        "n":[    3,4]} }, "a":3 }}`,
+			expected:      `{"1": { "b":1, "2": { "3": {"a":"A", "b":3, "n":[1,2,3,4]} }, "a":3 }}`,
+			errorExpected: false,
+		},
 	} {
 		var src map[string]interface{}
 		if err := json.Unmarshal([]byte(tuple.src), &src); err != nil {
