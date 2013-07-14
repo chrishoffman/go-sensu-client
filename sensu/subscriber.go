@@ -7,12 +7,8 @@ import (
 
 type Subscriber struct {
 	q    MessageQueuer
-	s    []subscription
+	s    []string
 	done chan error
-}
-
-type subscription struct {
-	name string
 }
 
 func (s *Subscriber) Init(q MessageQueuer, c *Config) {
@@ -30,28 +26,20 @@ func (s *Subscriber) Start() {
 
 	for _, sub := range s.s {
 		log.Printf("declaring Exchange (%q)", sub)
-		if err = s.q.ExchangeDeclare(
-			sub.name,
-			"fanout",
-		); err != nil {
+		err = s.q.ExchangeDeclare(sub, "fanout")
+		if err != nil {
 			log.Printf("Exchange Declare: %s", err)
 		}
 
 		log.Printf("binding to Exchange %q", sub)
-		if err = s.q.QueueBind(
-			queue.Name,
-			"",
-			sub.name,
-		); err != nil {
+		err = s.q.QueueBind(queue.Name, "", sub)
+		if err != nil {
 			log.Printf("Queue Bind: %s", err)
 		}
 	}
 
 	log.Printf("starting Consume")
-	deliveries, err := s.q.Consume(
-		queue.Name,
-		"",
-	)
+	deliveries, err := s.q.Consume(queue.Name, "")
 	if err != nil {
 		log.Printf("Queue Consume: %s", err)
 	}
