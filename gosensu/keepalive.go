@@ -32,7 +32,6 @@ func (k *Keepalive) Init(q MessageQueuer, config *Config) error {
 }
 
 func (k *Keepalive) Start() {
-
 	clientConfig := k.config.Data().Get("client")
 	reset := make(chan bool)
 	timer := time.AfterFunc(0, func() {

@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
-	"sensu-client/sensu"
+	"gosensu/gosensu"
 	"strings"
 )
 
