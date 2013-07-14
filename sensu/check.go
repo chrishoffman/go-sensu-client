@@ -2,7 +2,7 @@ package sensu
 
 type Check struct {
 	Name            string   `json:"name"`
-	Command         string   `json:""`
+	Command         string   `json:"command"`
 	Executed        int      `json:"executed"`
 	Output          string   `json:"output"`
 	Status          int      `json:"status"`
