@@ -7,7 +7,7 @@ import (
 )
 
 type Processor interface {
-	Init(MessageQueuer, *Config)
+	Init(MessageQueuer, *Config) error
 	Start()
 	Stop()
 }
@@ -35,7 +35,10 @@ func (c *Client) Start() {
 		select {
 		case <-connected:
 			for _, proc := range c.processes {
-				proc.Init(q, c.config)
+				err := proc.Init(q, c.config)
+				if err != nil {
+					panic(err) //TODO: Add recovery error handling
+				}
 				go proc.Start()
 			}
 			// Enable disconnect channel

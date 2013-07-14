@@ -1,51 +1,58 @@
 package sensu
 
 import (
+	"fmt"
 	"github.com/streadway/amqp"
 	"log"
 )
 
 type Subscriber struct {
-	q    MessageQueuer
-	s    []string
-	done chan error
+	subs       []string
+	deliveries <-chan amqp.Delivery
+	done       chan error
 }
 
-func (s *Subscriber) Init(q MessageQueuer, c *Config) {
-	s.q = q
-	s.done = make(chan error)
-}
-
-func (s *Subscriber) Start() {
+func (s *Subscriber) Init(q MessageQueuer, c *Config) error {
 	log.Printf("Declaring Queue")
-	queue, err := s.q.QueueDeclare("")
+	queue, err := q.QueueDeclare("")
 	if err != nil {
-		log.Printf("Queue Declare: %s", err)
+		return fmt.Errorf("Queue Declare: %s", err)
 	}
 	log.Printf("declared Queue")
 
-	for _, sub := range s.s {
+	for _, sub := range s.subs {
 		log.Printf("declaring Exchange (%q)", sub)
-		err = s.q.ExchangeDeclare(sub, "fanout")
+		err = q.ExchangeDeclare(sub, "fanout")
 		if err != nil {
-			log.Printf("Exchange Declare: %s", err)
+			return fmt.Errorf("Exchange Declare: %s", err)
 		}
 
 		log.Printf("binding to Exchange %q", sub)
-		err = s.q.QueueBind(queue.Name, "", sub)
+		err = q.QueueBind(queue.Name, "", sub)
 		if err != nil {
-			log.Printf("Queue Bind: %s", err)
+			return fmt.Errorf("Queue Bind: %s", err)
 		}
 	}
 
 	log.Printf("starting Consume")
-	deliveries, err := s.q.Consume(queue.Name, "")
+	s.deliveries, err = q.Consume(queue.Name, "")
 	if err != nil {
-		log.Printf("Queue Consume: %s", err)
+		return fmt.Errorf("Queue Consume: %s", err)
 	}
 
-	go handle(deliveries, s.done)
-	<-s.done
+	s.done = make(chan error)
+	return nil
+}
+
+func (s *Subscriber) Start() {
+	go handle(s.deliveries, s.done)
+
+	// for {
+	// 	select {
+	// 	case <-s.done:
+	// 		return
+	// 	}
+	// }
 }
 
 func (s *Subscriber) Stop() {

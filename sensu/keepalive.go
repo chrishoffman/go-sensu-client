@@ -1,6 +1,7 @@
 package sensu
 
 import (
+	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/streadway/amqp"
 	"log"
@@ -15,20 +16,22 @@ type Keepalive struct {
 
 const keepaliveInterval = 20 * time.Second
 
-func (k *Keepalive) Init(q MessageQueuer, config *Config) {
-	k.q = q
-	k.config = config
-	k.close = make(chan bool)
-}
-
-func (k *Keepalive) Start() {
-	if err := k.q.ExchangeDeclare(
+func (k *Keepalive) Init(q MessageQueuer, config *Config) error {
+	if err := q.ExchangeDeclare(
 		"keepalives",
 		"direct",
 	); err != nil {
-		log.Println("Exchange Declare: %s", err)
-		//panic?
+		return fmt.Errorf("Exchange Declare: %s", err)
 	}
+
+	k.q = q
+	k.config = config
+	k.close = make(chan bool)
+
+	return nil
+}
+
+func (k *Keepalive) Start() {
 
 	clientConfig := k.config.Data().Get("client")
 	reset := make(chan bool)
