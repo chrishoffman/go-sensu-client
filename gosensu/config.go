@@ -34,7 +34,7 @@ type Config struct {
 	Checks   map[string]interface{} `json:"checks"`
 	Client   ClientConfig           `json:"client"`
 	Rabbitmq RabbitmqConfig         `json:"rabbitmq"`
-	data     *simplejson.Json
+	rawData  *simplejson.Json
 }
 
 type ConfigData struct {
@@ -73,7 +73,7 @@ func LoadConfigs(configFile string, configDirs []string) (*Config, error) {
 	}
 	config := new(Config)
 	json.Unmarshal(mergedJson, &config)
-	config.data, _ = simplejson.NewJson(mergedJson)
+	config.rawData, _ = simplejson.NewJson(mergedJson)
 
 	return config, nil
 }
@@ -106,7 +106,6 @@ func mapExtend(base map[string]interface{}, ext map[string]interface{}) (map[str
 			b := reflect.ValueOf(baseVal)
 			e := reflect.ValueOf(extVal)
 
-			// Keep value of base if types do not match
 			if b.Type() != e.Type() {
 				return nil, fmt.Errorf("Conflicting types for key: %s (%s/%s). Skipping.", key, b.Kind().String(), e.Kind().String())
 			}
@@ -150,5 +149,5 @@ func sliceExtend(slice []interface{}, i interface{}) []interface{} {
 }
 
 func (c *Config) Data() *simplejson.Json {
-	return c.data
+	return c.rawData
 }
