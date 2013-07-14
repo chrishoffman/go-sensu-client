@@ -1,14 +1,13 @@
 package sensu
 
 type Check struct {
-	Name            string   `json:"name"`
-	Command         string   `json:"command"`
-	Executed        int      `json:"executed"`
-	Output          string   `json:"output"`
-	Status          int      `json:"status"`
-	Duration        float64  `json:"duration"`
-	Timeout         int      `json:"timeout"`
-	Handle          bool     `json:"handle"`
-	Handlers        []string `json:"handlers"`
+	Name            string 
+	Command         string
+	Executed        int
+	Status          int
+	Output          string
+	Duration        float64
+	Timeout         int
 	commandExecuted string
+	data            *simplejson.Json
 }
