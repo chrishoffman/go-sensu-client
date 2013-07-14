@@ -6,7 +6,7 @@ type Check struct {
 	Executed        int      `json:"executed"`
 	Output          string   `json:"output"`
 	Status          int      `json:"status"`
-	Duration        float    `json:"duration"`
+	Duration        float64  `json:"duration"`
 	Timeout         int      `json:"timeout"`
 	Handle          bool     `json:"handle"`
 	Handlers        []string `json:"handlers"`
