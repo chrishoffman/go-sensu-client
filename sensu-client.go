@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
-	"gosensu/gosensu"
+	sensu "gosensu/gosensu"
 	"strings"
 )
 
