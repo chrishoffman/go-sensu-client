@@ -5,5 +5,12 @@
 		"subscriptions": [
 			"test"
 		]
-	}
+	},
+	"rabbitmq": {
+		"host": "localhost",
+		"port": 5672,
+		"user": "guest",
+		"password": "guest",
+		"vhost": "/sensu"
+	}	
 }
