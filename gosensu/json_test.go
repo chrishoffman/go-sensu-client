@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_Extend(t *testing.T) {
+func Test_JsonExtend(t *testing.T) {
 	for i, tuple := range []struct {
 		src           string
 		dst           string

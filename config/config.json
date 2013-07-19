@@ -1,7 +1,7 @@
 {
 	"client": {
-		"name": "b1d006",
-		"address": "192.168.22.6",
+		"name": "localhost",
+		"address": "192.168.1.1",
 		"subscriptions": [
 			"test"
 		]
