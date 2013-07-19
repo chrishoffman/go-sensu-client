@@ -2,6 +2,7 @@ package sensu
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"io/ioutil"
@@ -30,9 +31,9 @@ type RabbitmqConfig struct {
 }
 
 type Config struct {
-	Checks   map[string]interface{} `json:"checks"`
-	Client   ClientConfig           `json:"client"`
-	Rabbitmq RabbitmqConfig         `json:"rabbitmq"`
+	Checks   map[string]Check `json:"checks"`
+	Client   ClientConfig     `json:"client"`
+	Rabbitmq RabbitmqConfig   `json:"rabbitmq"`
 	rawData  *simplejson.Json
 }
 
@@ -87,6 +88,16 @@ func parseFile(filename string) (*Json, error) {
 	}
 
 	return j, nil
+}
+
+func validateConfig(cfg *Config) []error {
+	errs := []error{}
+
+	if cfg.Client.Address == "" {
+		errs = append(errs, errors.New("Missing client address"))
+	}
+
+	return errs
 }
 
 func (c *Config) Data() *simplejson.Json {
