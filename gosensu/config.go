@@ -65,11 +65,19 @@ func LoadConfigs(configFile string, configDirs []string) (*Config, error) {
 	//Reencoding merged JSON to parse to concrete type
 	mergedJson, err := json.Marshal(js.data)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to reencode merged json")
+		return nil, errors.New("Unable to reencode merged json")
 	}
 	config := new(Config)
 	json.Unmarshal(mergedJson, &config)
 	config.rawData, _ = simplejson.NewJson(mergedJson)
+
+	validationErrors := validateConfig(config)
+	if len(validationErrors) > 0 {
+		for _, e := range validationErrors {
+			fmt.Print(e)
+		}
+		return nil, errors.New("Error validating the configs")
+	}
 
 	return config, nil
 }
