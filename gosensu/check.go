@@ -5,7 +5,7 @@ import (
 )
 
 type Check struct {
-	Name            string 
+	Name            string
 	Command         string
 	Executed        int
 	Status          int

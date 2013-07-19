@@ -1,26 +1,21 @@
 package sensu
 
-// import (
-// 	"strconv"
-// 	"testing"
-// )
+import (
+	"testing"
+)
 
-// func Test_RabbitmqUrl(t *testing.T) {
-// 	cfg := RabbitmqConfig{
-// 		Host: "localhost",
-// 		Port: 
-// 	}
+func Test_RabbitmqUrl(t *testing.T) {
+	cfg := RabbitmqConfig{
+		Host:     "localhost",
+		Port:     5555,
+		Vhost:    "/test",
+		User:     "test",
+		Password: "testpassword",
+	}
 
-
-// }
-
-
-// func createRabbitmqUri(cfg RabbitmqConfig) string {
-// 	u := url.URL{
-// 		Scheme: "amqp",
-// 		Host:   fmt.Sprintf("%s:%s", cfg.Host, strconv.FormatInt(int64(cfg.Port), 10)),
-// 		Path:   fmt.Sprintf("/%s", cfg.Vhost),
-// 		User:   url.UserPassword(cfg.User, cfg.Password),
-// 	}
-// 	return u.String()
-// }
+	expected := "amqp://test:testpassword@localhost:5555//test"
+	actual := createRabbitmqUri(cfg)
+	if expected != actual {
+		t.Errorf("[rmq url] expected: %s, actual: %s", expected, actual)
+	}
+}

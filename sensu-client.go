@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
+	sensu "gosensu/gosensu"
 	"log"
 	"os"
-	sensu "gosensu/gosensu"
 	"strings"
 )
 
